@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "remotion:studio": "remotion studio",
+    "remotion:render": "remotion render Demo public/demo.mp4"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
@@ -16,12 +18,16 @@
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
+    "@remotion/bundler": "^4.0.448",
+    "@remotion/cli": "^4.0.448",
+    "@remotion/renderer": "^4.0.448",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "remotion": "^4.0.448",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
