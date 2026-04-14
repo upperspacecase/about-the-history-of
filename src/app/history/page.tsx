@@ -54,9 +54,12 @@ function HistoryContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ headline }),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load history");
-        return res.json();
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || data.error || "Failed to load history");
+        }
+        return data;
       })
       .then((data) => {
         setResult(data);

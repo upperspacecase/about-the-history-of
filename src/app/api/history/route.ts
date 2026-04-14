@@ -62,8 +62,8 @@ export async function POST(request: Request) {
     }
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 3000,
+      model: "claude-sonnet-4-5",
+      max_tokens: 4096,
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -75,21 +75,30 @@ export async function POST(request: Request) {
 
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
-    const parsed = JSON.parse(text);
+
+    const cleaned = text
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
+
+    const parsed = JSON.parse(cleaned);
 
     return Response.json(parsed);
   } catch (err) {
     console.error("History API error:", err);
 
+    const detail = err instanceof Error ? err.message : String(err);
+
     if (err instanceof SyntaxError) {
       return Response.json(
-        { error: "Failed to parse historical analysis" },
+        { error: "Failed to parse historical analysis", detail },
         { status: 500 }
       );
     }
 
     return Response.json(
-      { error: "Failed to generate historical analysis" },
+      { error: "Failed to generate historical analysis", detail },
       { status: 500 }
     );
   }
