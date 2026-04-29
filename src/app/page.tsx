@@ -389,14 +389,32 @@ export default function Home() {
             Headlines sourced from public RSS feeds. Historical analysis powered
             by Claude.
           </p>
-          {user && (
-            <button
-              onClick={() => signOut()}
-              className="mt-3 text-[11px] text-muted hover:text-accent transition-colors cursor-pointer"
+          <p className="mt-3 text-xs flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <Link
+              href="/privacy"
+              className="hover:text-accent transition-colors"
             >
-              Sign out
-            </button>
-          )}
+              Privacy
+            </Link>
+            <span aria-hidden>·</span>
+            <Link
+              href="/terms"
+              className="hover:text-accent transition-colors"
+            >
+              Terms
+            </Link>
+            {user && (
+              <>
+                <span aria-hidden>·</span>
+                <button
+                  onClick={() => signOut()}
+                  className="hover:text-accent transition-colors cursor-pointer"
+                >
+                  Sign out
+                </button>
+              </>
+            )}
+          </p>
         </div>
       </footer>
     </div>
