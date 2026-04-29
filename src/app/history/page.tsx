@@ -297,7 +297,7 @@ function HistoryContent() {
               <div className="relative pl-8 border-l-2 border-border space-y-8">
                 {result.timeline.map((event, i) => (
                   <div key={i} className="relative">
-                    <div className="absolute -left-[33px] top-0.5 w-4 h-4 rounded-full bg-accent/20 border-2 border-accent flex items-center justify-center">
+                    <div className="absolute -left-[39px] top-0.5 w-4 h-4 rounded-full bg-accent/20 border-2 border-accent flex items-center justify-center">
                       <div className="w-1.5 h-1.5 rounded-full bg-accent" />
                     </div>
                     <div className="text-sm font-mono text-accent font-medium">
