@@ -49,7 +49,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<Category | "All">("All");
   const [activeSource, setActiveSource] = useState<string>("All");
   const [showDemo, setShowDemo] = useState(false);
-  const { user, signIn } = useAuth();
+  const { user, signIn, signOut } = useAuth();
 
   useEffect(() => {
     fetch("/api/headlines")
@@ -389,6 +389,14 @@ export default function Home() {
             Headlines sourced from public RSS feeds. Historical analysis powered
             by Claude.
           </p>
+          {user && (
+            <button
+              onClick={() => signOut()}
+              className="mt-3 text-[11px] text-muted hover:text-accent transition-colors cursor-pointer"
+            >
+              Sign out
+            </button>
+          )}
         </div>
       </footer>
     </div>
