@@ -47,6 +47,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category | "All">("All");
   const [activeSource, setActiveSource] = useState<string>("All");
+  const [showDemo, setShowDemo] = useState(false);
 
   useEffect(() => {
     fetch("/api/headlines")
@@ -143,17 +144,35 @@ export default function Home() {
               timeline, the patterns, the precedent.
             </p>
 
-            <div className="mt-8 rounded-lg overflow-hidden border border-border bg-card shadow-sm">
-              <video
-                src="/demo.mp4"
-                poster="/demo-poster.jpg"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                className="w-full h-auto block"
-              />
+            <div className="mt-8">
+              <button
+                onClick={() => setShowDemo((s) => !s)}
+                aria-expanded={showDemo}
+                className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline cursor-pointer"
+              >
+                <span
+                  aria-hidden
+                  className={`inline-block transition-transform ${showDemo ? "rotate-90" : ""}`}
+                >
+                  &rsaquo;
+                </span>
+                {showDemo ? "Hide demo" : "Watch a 20-second demo"}
+              </button>
+
+              {showDemo && (
+                <div className="mt-4 rounded-lg overflow-hidden border border-border bg-card shadow-sm animate-fade-in">
+                  <video
+                    src="/demo.mp4"
+                    poster="/demo-poster.jpg"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-auto block"
+                  />
+                </div>
+              )}
             </div>
 
             <button
@@ -172,29 +191,67 @@ export default function Home() {
             <ul className="space-y-5">
               <li>
                 <p
-                  className="text-base font-semibold leading-snug"
+                  className="text-base font-semibold mb-1"
                   style={{ fontFamily: "var(--font-serif)" }}
                 >
                   History doesn&apos;t repeat but it does rhyme.
                 </p>
+                <p className="text-sm text-muted leading-relaxed">
+                  Every crisis has a precedent. The precedent usually hints at
+                  how this one ends.
+                </p>
               </li>
               <li>
                 <p
-                  className="text-base font-semibold leading-snug"
+                  className="text-base font-semibold mb-1"
                   style={{ fontFamily: "var(--font-serif)" }}
                 >
                   Remember, there is no finish line.
                 </p>
+                <p className="text-sm text-muted leading-relaxed">
+                  Every era thinks it&apos;s the last act. None has been.
+                </p>
               </li>
               <li>
                 <p
-                  className="text-base font-semibold leading-snug"
+                  className="text-base font-semibold mb-1"
                   style={{ fontFamily: "var(--font-serif)" }}
                 >
                   Find signal in the noise.
                 </p>
+                <p className="text-sm text-muted leading-relaxed">
+                  Headlines describe. History explains.
+                </p>
               </li>
             </ul>
+
+            {headlines.length > 0 && (
+              <div className="mt-10 pt-8 border-t border-border">
+                <h3 className="text-xs font-medium uppercase tracking-widest text-muted mb-5">
+                  Today&apos;s headlines
+                </h3>
+                <ul className="space-y-4">
+                  {headlines.slice(0, 4).map((h, i) => (
+                    <li key={i}>
+                      <Link
+                        href={`/history?headline=${toSlug(h.title)}&source=${encodeURIComponent(h.source)}&link=${encodeURIComponent(h.link)}`}
+                        className="group block"
+                      >
+                        <p className="text-[11px] uppercase tracking-wider text-muted mb-1">
+                          {h.source} / {h.category}
+                        </p>
+                        <p
+                          className="text-sm font-semibold leading-snug group-hover:text-accent transition-colors"
+                          style={{ fontFamily: "var(--font-serif)" }}
+                        >
+                          {h.title}
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </aside>
         </div>
       </section>
