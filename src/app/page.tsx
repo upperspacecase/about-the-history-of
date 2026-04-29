@@ -127,10 +127,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero */}
+      {/* Hero + value props */}
       <section className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="max-w-4xl">
+        <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2">
             <h2
               className="text-4xl sm:text-5xl font-bold leading-[1.1] tracking-tight mb-4"
               style={{ fontFamily: "var(--font-serif)" }}
@@ -142,55 +142,60 @@ export default function Home() {
               Pick any headline. Read the history that produced it — the
               timeline, the patterns, the precedent.
             </p>
+
+            <div className="mt-8 rounded-lg overflow-hidden border border-border bg-card shadow-sm">
+              <video
+                src="/demo.mp4"
+                poster="/demo-poster.jpg"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="w-full h-auto block"
+              />
+            </div>
+
+            <button
+              onClick={handleGetStarted}
+              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
+            >
+              Read today&apos;s history
+              <span aria-hidden>&darr;</span>
+            </button>
           </div>
 
-          <div className="mt-8 rounded-lg overflow-hidden border border-border bg-card shadow-sm">
-            <video
-              src="/demo.mp4"
-              poster="/demo-poster.jpg"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className="w-full h-auto block"
-            />
-          </div>
-
-          <ul className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
-            <li>
-              <p
-                className="text-lg font-semibold leading-snug"
-                style={{ fontFamily: "var(--font-serif)" }}
-              >
-                History doesn&apos;t repeat but it does rhyme.
-              </p>
-            </li>
-            <li>
-              <p
-                className="text-lg font-semibold leading-snug"
-                style={{ fontFamily: "var(--font-serif)" }}
-              >
-                Remember, there is no finish line.
-              </p>
-            </li>
-            <li>
-              <p
-                className="text-lg font-semibold leading-snug"
-                style={{ fontFamily: "var(--font-serif)" }}
-              >
-                Find signal in the noise.
-              </p>
-            </li>
-          </ul>
-
-          <button
-            onClick={handleGetStarted}
-            className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
-          >
-            Read today&apos;s history
-            <span aria-hidden>&darr;</span>
-          </button>
+          <aside className="lg:border-l lg:border-border lg:pl-10">
+            <h3 className="text-xs font-medium uppercase tracking-widest text-muted mb-5">
+              Why be a student of history?
+            </h3>
+            <ul className="space-y-5">
+              <li>
+                <p
+                  className="text-base font-semibold leading-snug"
+                  style={{ fontFamily: "var(--font-serif)" }}
+                >
+                  History doesn&apos;t repeat but it does rhyme.
+                </p>
+              </li>
+              <li>
+                <p
+                  className="text-base font-semibold leading-snug"
+                  style={{ fontFamily: "var(--font-serif)" }}
+                >
+                  Remember, there is no finish line.
+                </p>
+              </li>
+              <li>
+                <p
+                  className="text-base font-semibold leading-snug"
+                  style={{ fontFamily: "var(--font-serif)" }}
+                >
+                  Find signal in the noise.
+                </p>
+              </li>
+            </ul>
+          </aside>
         </div>
       </section>
 
