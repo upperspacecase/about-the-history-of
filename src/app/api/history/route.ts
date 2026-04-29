@@ -1,4 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { FieldValue } from "firebase-admin/firestore";
+import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+import { headlineKey } from "@/lib/history-key";
 
 const client = new Anthropic();
 
@@ -43,60 +46,119 @@ Guidelines:
 - Write clearly for a general audience in an editorial news voice
 - Return ONLY the JSON object, no other text`;
 
+interface HistoryDoc {
+  headline: string;
+  topic: string;
+  summary: string;
+  timeline: unknown[];
+  patterns: unknown[];
+  furtherReading: unknown[];
+  whyItMattersNow: string;
+}
+
+function validateHeadline(headline: unknown): string | { error: string; status: number } {
+  if (!headline || typeof headline !== "string") {
+    return { error: "A headline is required", status: 400 };
+  }
+  if (headline.length > 500) {
+    return { error: "Headline is too long (max 500 characters)", status: 400 };
+  }
+  return headline;
+}
+
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const headline = url.searchParams.get("headline");
+  const result = validateHeadline(headline);
+  if (typeof result !== "string") {
+    return Response.json({ error: result.error }, { status: result.status });
+  }
+
+  const id = headlineKey(result);
+  const snap = await getAdminDb().collection("histories").doc(id).get();
+  if (!snap.exists) {
+    return Response.json({ cached: false }, { status: 404 });
+  }
+  const data = snap.data() as HistoryDoc;
+  return Response.json({ cached: true, ...data });
+}
+
 export async function POST(request: Request) {
   try {
-    const { headline } = await request.json();
-
-    if (!headline || typeof headline !== "string") {
+    const authHeader = request.headers.get("authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!token) {
       return Response.json(
-        { error: "A headline is required" },
-        { status: 400 }
+        { error: "Sign in required to generate a new history" },
+        { status: 401 }
       );
     }
 
-    if (headline.length > 500) {
-      return Response.json(
-        { error: "Headline is too long (max 500 characters)" },
-        { status: 400 }
-      );
+    let uid: string;
+    try {
+      const decoded = await getAdminAuth().verifyIdToken(token);
+      uid = decoded.uid;
+    } catch {
+      return Response.json({ error: "Invalid auth token" }, { status: 401 });
+    }
+
+    const { headline } = await request.json();
+    const result = validateHeadline(headline);
+    if (typeof result !== "string") {
+      return Response.json({ error: result.error }, { status: result.status });
+    }
+
+    const id = headlineKey(result);
+    const db = getAdminDb();
+    const ref = db.collection("histories").doc(id);
+    const userRef = db.collection("users").doc(uid);
+
+    const existing = await ref.get();
+    if (existing.exists) {
+      return Response.json({ cached: true, ...(existing.data() as HistoryDoc) });
+    }
+
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      await userRef.set({
+        isPaying: false,
+        createdAt: FieldValue.serverTimestamp(),
+      });
     }
 
     const message = await client.messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: `News headline: "${headline}"`,
-        },
-      ],
+      messages: [{ role: "user", content: `News headline: "${result}"` }],
     });
 
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
-
     const cleaned = text
       .trim()
       .replace(/^```(?:json)?\s*/i, "")
       .replace(/\s*```$/, "")
       .trim();
+    const parsed = JSON.parse(cleaned) as Omit<HistoryDoc, "headline">;
 
-    const parsed = JSON.parse(cleaned);
+    const doc: HistoryDoc = { headline: result, ...parsed };
+    await ref.set({
+      ...doc,
+      generatedBy: uid,
+      generatedAt: FieldValue.serverTimestamp(),
+    });
 
-    return Response.json(parsed);
+    return Response.json({ cached: false, ...doc });
   } catch (err) {
     console.error("History API error:", err);
-
     const detail = err instanceof Error ? err.message : String(err);
-
     if (err instanceof SyntaxError) {
       return Response.json(
         { error: "Failed to parse historical analysis", detail },
         { status: 500 }
       );
     }
-
     return Response.json(
       { error: "Failed to generate historical analysis", detail },
       { status: 500 }

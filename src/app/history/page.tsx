@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/lib/firebase/auth-context";
+import { SignInButton } from "@/components/sign-in-button";
 
 interface TimelineEvent {
   year: string;
@@ -38,9 +40,43 @@ function HistoryContent() {
   const source = searchParams.get("source") || "";
   const originalLink = searchParams.get("link") || "";
 
+  const { user, loading: authLoading, signIn, getIdToken } = useAuth();
+
   const [result, setResult] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [error, setError] = useState("");
+
+  const generate = useCallback(async () => {
+    setError("");
+    setGenerating(true);
+    try {
+      const token = await getIdToken();
+      if (!token) {
+        setNeedsSignIn(true);
+        return;
+      }
+      const res = await fetch("/api/history", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ headline }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || data.error || "Failed to load history");
+      }
+      setResult(data);
+      setNeedsSignIn(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setGenerating(false);
+    }
+  }, [headline, getIdToken]);
 
   useEffect(() => {
     if (!headline) {
@@ -49,26 +85,34 @@ function HistoryContent() {
       return;
     }
 
-    fetch("/api/history", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ headline }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || data.error || "Failed to load history");
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/history?headline=${encodeURIComponent(headline)}`
+        );
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json();
+          setResult(data);
+        } else if (res.status === 404) {
+          setNeedsSignIn(true);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to load history");
         }
-        return data;
-      })
-      .then((data) => {
-        setResult(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [headline]);
 
   return (
@@ -99,6 +143,9 @@ function HistoryContent() {
           >
             About the History of...
           </span>
+          <div className="ml-auto">
+            <SignInButton />
+          </div>
         </div>
       </header>
 
@@ -139,7 +186,7 @@ function HistoryContent() {
         </div>
 
         {/* Loading */}
-        {loading && (
+        {(loading || generating) && (
           <div className="space-y-8 py-8">
             <div className="space-y-3">
               <div
@@ -176,8 +223,43 @@ function HistoryContent() {
               ))}
             </div>
             <p className="text-center text-sm text-muted pt-4">
-              Researching the historical record...
+              {generating
+                ? "Researching the historical record..."
+                : "Checking the archive..."}
             </p>
+          </div>
+        )}
+
+        {/* Sign-in / generate prompt */}
+        {!loading && !generating && !result && needsSignIn && !error && (
+          <div className="py-12 text-center max-w-md mx-auto">
+            <h2
+              className="text-2xl font-bold mb-3"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              No history written yet
+            </h2>
+            <p className="text-muted mb-6 leading-relaxed">
+              Be the first to commission the historical context for this
+              headline. Once written, it&apos;s saved for everyone to read.
+            </p>
+            {authLoading ? (
+              <div className="h-10 w-40 mx-auto bg-border/50 rounded animate-pulse-bar" />
+            ) : user ? (
+              <button
+                onClick={generate}
+                className="px-5 py-2.5 rounded-md bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Write the history
+              </button>
+            ) : (
+              <button
+                onClick={() => signIn()}
+                className="px-5 py-2.5 rounded-md bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Sign in with Google to generate
+              </button>
+            )}
           </div>
         )}
 

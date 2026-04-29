@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { SignInButton } from "@/components/sign-in-button";
 
 interface Headline {
   title: string;
@@ -64,7 +65,10 @@ export default function Home() {
     <div className="flex flex-col flex-1">
       {/* Masthead */}
       <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 pt-6 pb-4">
+        <div className="max-w-6xl mx-auto px-6 pt-6 pb-4 relative">
+          <div className="absolute right-6 top-6">
+            <SignInButton />
+          </div>
           <div className="text-center">
             <p className="text-xs tracking-widest uppercase text-muted mb-2">
               {todayFormatted()}
