@@ -49,7 +49,23 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<Category | "All">("All");
   const [activeSource, setActiveSource] = useState<string>("All");
   const [showDemo, setShowDemo] = useState(false);
+  const [foundersRemaining, setFoundersRemaining] = useState<number | null>(
+    null
+  );
   const { user, signIn, signOut } = useAuth();
+
+  useEffect(() => {
+    fetch("/api/founders")
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.remaining === "number") {
+          setFoundersRemaining(data.remaining);
+        }
+      })
+      .catch(() => {
+        /* leave null — banner falls back to generic copy */
+      });
+  }, []);
 
   useEffect(() => {
     fetch("/api/headlines")
@@ -96,9 +112,24 @@ export default function Home() {
       {!user && (
         <div className="bg-accent text-white">
           <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-            <span className="font-medium">
-              See the history of every news story.
-            </span>
+            {foundersRemaining === null || foundersRemaining > 0 ? (
+              <span className="font-medium">
+                Free for a year — share with 2 friends.
+                {foundersRemaining !== null && (
+                  <>
+                    {" "}
+                    <strong>
+                      {foundersRemaining} of 250 founder spots left.
+                    </strong>
+                  </>
+                )}
+              </span>
+            ) : (
+              <span className="font-medium">
+                Founder spots are full. Sign up anyway — there&apos;s more to
+                come.
+              </span>
+            )}
             <button
               onClick={() => signIn()}
               className="px-3 py-1 rounded-full bg-white text-accent text-xs font-semibold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer"

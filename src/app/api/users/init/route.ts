@@ -23,18 +23,27 @@ export async function POST(request: Request) {
 
   const db = getAdminDb();
   const ref = db.collection("users").doc(uid);
-  const snap = await ref.get();
+  const counterRef = db.collection("meta").doc("founders");
 
-  if (snap.exists) {
-    return Response.json({ created: false });
-  }
+  const created = await db.runTransaction(async (tx) => {
+    const userSnap = await tx.get(ref);
+    if (userSnap.exists) return false;
 
-  await ref.set({
-    isPaying: false,
-    email: email ?? null,
-    name: name ?? null,
-    createdAt: FieldValue.serverTimestamp(),
+    tx.set(ref, {
+      isPaying: false,
+      email: email ?? null,
+      name: name ?? null,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    tx.set(
+      counterRef,
+      { claimed: FieldValue.increment(1) },
+      { merge: true }
+    );
+    return true;
   });
+
+  if (!created) return Response.json({ created: false });
 
   if (email) {
     try {
