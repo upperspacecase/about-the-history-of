@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
+import { CATEGORIES, type Category } from "@/lib/categories";
 
 interface Headline {
   title: string;
@@ -43,6 +44,7 @@ export default function Home() {
   const [headlines, setHeadlines] = useState<Headline[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeCategory, setActiveCategory] = useState<Category | "All">("All");
 
   useEffect(() => {
     fetch("/api/headlines")
@@ -57,9 +59,17 @@ export default function Home() {
       });
   }, []);
 
-  const lead = headlines[0];
-  const secondary = headlines.slice(1, 4);
-  const rest = headlines.slice(4);
+  const filtered = useMemo(
+    () =>
+      activeCategory === "All"
+        ? headlines
+        : headlines.filter((h) => h.category === activeCategory),
+    [headlines, activeCategory]
+  );
+
+  const lead = filtered[0];
+  const secondary = filtered.slice(1, 4);
+  const rest = filtered.slice(4);
 
   return (
     <div className="flex flex-col flex-1">
@@ -85,13 +95,23 @@ export default function Home() {
           </div>
         </div>
         <div className="border-t border-border">
-          <div className="max-w-6xl mx-auto px-6 py-2 flex gap-6 text-xs font-medium uppercase tracking-wider text-muted overflow-x-auto">
-            <span>World</span>
-            <span>U.S.</span>
-            <span>Politics</span>
-            <span>Business</span>
-            <span>Science</span>
-            <span>Technology</span>
+          <div className="max-w-6xl mx-auto px-6 py-2 flex gap-6 text-xs font-medium uppercase tracking-wider overflow-x-auto">
+            {(["All", ...CATEGORIES] as const).map((cat) => {
+              const isActive = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={
+                    isActive
+                      ? "text-accent border-b-2 border-accent pb-1 -mb-[9px] cursor-pointer"
+                      : "text-muted hover:text-accent transition-colors cursor-pointer"
+                  }
+                >
+                  {cat}
+                </button>
+              );
+            })}
           </div>
         </div>
       </header>
@@ -130,7 +150,19 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && !error && headlines.length > 0 && (
+        {!loading && !error && headlines.length > 0 && filtered.length === 0 && (
+          <div className="py-12 text-center text-muted">
+            <p>No headlines in {activeCategory} right now.</p>
+            <button
+              onClick={() => setActiveCategory("All")}
+              className="mt-3 text-accent underline text-sm"
+            >
+              Show all
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length > 0 && (
           <>
             {/* Lead story + secondary */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-8 border-b border-border">

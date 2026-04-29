@@ -12,18 +12,18 @@ interface FeedSource {
 
 const FEEDS: FeedSource[] = [
   {
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
+    category: "World",
+  },
+  {
+    name: "Al Jazeera",
+    url: "https://www.aljazeera.com/xml/rss/all.xml",
+    category: "World",
+  },
+  {
     name: "Associated Press",
     url: "https://rsshub.app/apnews/topics/apf-topnews",
-    category: "World",
-  },
-  {
-    name: "Reuters",
-    url: "https://rsshub.app/reuters/world",
-    category: "World",
-  },
-  {
-    name: "BBC News",
-    url: "https://feeds.bbci.co.uk/news/rss.xml",
     category: "World",
   },
   {
@@ -32,11 +32,27 @@ const FEEDS: FeedSource[] = [
     category: "U.S.",
   },
   {
-    name: "Al Jazeera",
-    url: "https://www.aljazeera.com/xml/rss/all.xml",
-    category: "World",
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/politics/rss.xml",
+    category: "Politics",
+  },
+  {
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/business/rss.xml",
+    category: "Business",
+  },
+  {
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+    category: "Science",
+  },
+  {
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    category: "Technology",
   },
 ];
+
 
 export interface Headline {
   title: string;
