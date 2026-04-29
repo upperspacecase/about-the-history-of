@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "About the History of...",
+  title: "The Long View",
   description:
-    "Today's headlines with the history behind them. Patterns, precedents, and clarity.",
+    "If you're not a student of history, everything feels unprecedented. Today's headlines with the history behind them.",
 };
 
 export default function RootLayout({

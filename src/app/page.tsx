@@ -118,7 +118,7 @@ export default function Home() {
               className="text-4xl sm:text-5xl font-bold tracking-tight mb-1"
               style={{ fontFamily: "var(--font-serif)" }}
             >
-              About the History of...
+              The Long View
             </h1>
             <p className="text-sm text-muted">
               Today&apos;s headlines. The history behind them.
@@ -127,75 +127,70 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero + value props */}
+      {/* Hero */}
       <section className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-10">
-          <div className="lg:col-span-2">
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="max-w-4xl">
             <h2
-              className="text-4xl sm:text-5xl font-bold leading-tight tracking-tight mb-4"
+              className="text-4xl sm:text-5xl font-bold leading-[1.1] tracking-tight mb-4"
               style={{ fontFamily: "var(--font-serif)" }}
             >
-              Today&apos;s news.
-              <br />
-              Yesterday&apos;s playbook.
+              If you&apos;re not a student of history, everything feels
+              unprecedented.
             </h2>
             <p className="text-lg text-muted leading-relaxed max-w-2xl">
-              Pick a headline. Read the history that produced it — the timeline,
-              the recurring patterns, the precedents the news cycle keeps
-              forgetting. Every story has a backstory; we surface it in seconds.
+              Pick any headline. Read the history that produced it — the
+              timeline, the patterns, the precedent.
             </p>
-            <button
-              onClick={handleGetStarted}
-              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
-            >
-              Browse today&apos;s headlines
-              <span aria-hidden>&darr;</span>
-            </button>
           </div>
 
-          <aside className="lg:border-l lg:border-border lg:pl-10">
-            <h3 className="text-xs font-medium uppercase tracking-widest text-muted mb-5">
-              Why be a student of history?
-            </h3>
-            <ul className="space-y-5">
-              <li>
-                <p
-                  className="text-base font-semibold mb-1"
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  Patterns rhyme.
-                </p>
-                <p className="text-sm text-muted leading-relaxed">
-                  Every crisis has a precedent — and the precedent usually hints
-                  at how this one ends.
-                </p>
-              </li>
-              <li>
-                <p
-                  className="text-base font-semibold mb-1"
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  Memory beats panic.
-                </p>
-                <p className="text-sm text-muted leading-relaxed">
-                  Headlines feel new because we forget. Context turns urgency
-                  into perspective.
-                </p>
-              </li>
-              <li>
-                <p
-                  className="text-base font-semibold mb-1"
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  Edge compounds.
-                </p>
-                <p className="text-sm text-muted leading-relaxed">
-                  Most readers consume the headline. The few who know its history
-                  understand more, in less time.
-                </p>
-              </li>
-            </ul>
-          </aside>
+          <div className="mt-8 rounded-lg overflow-hidden border border-border bg-card shadow-sm">
+            <video
+              src="/demo.mp4"
+              poster="/demo-poster.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              className="w-full h-auto block"
+            />
+          </div>
+
+          <ul className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
+            <li>
+              <p
+                className="text-lg font-semibold leading-snug"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                History doesn&apos;t repeat but it does rhyme.
+              </p>
+            </li>
+            <li>
+              <p
+                className="text-lg font-semibold leading-snug"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                Remember, there is no finish line.
+              </p>
+            </li>
+            <li>
+              <p
+                className="text-lg font-semibold leading-snug"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                Find signal in the noise.
+              </p>
+            </li>
+          </ul>
+
+          <button
+            onClick={handleGetStarted}
+            className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
+          >
+            Read today&apos;s history
+            <span aria-hidden>&darr;</span>
+          </button>
         </div>
       </section>
 

@@ -141,7 +141,7 @@ function HistoryContent() {
             className="text-sm font-medium"
             style={{ fontFamily: "var(--font-serif)" }}
           >
-            About the History of...
+            The Long View
           </span>
           <div className="ml-auto">
             <SignInButton />

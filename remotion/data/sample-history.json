@@ -1,0 +1,120 @@
+{
+  "id": "2514abb5cf56405b10d60ff50572b360",
+  "headline": "Supreme Court Considers Trump’s Plan to Revoke Deportation Protections",
+  "source": null,
+  "topic": "U.S. Immigration Policy and Executive Authority Over Protected Status Programs",
+  "summary": "The Supreme Court's consideration of executive authority over deportation protections continues a century-long tension between presidential power, congressional intent, and humanitarian immigration policy. From the Chinese Exclusion Act to DACA, the question of who decides which immigrants can remain in America has shaped the nation's identity and tested the limits of executive action. Today's case echoes historical moments when courts determined whether presidents can unilaterally reshape immigration law.",
+  "timeline": [
+    {
+      "year": "1882",
+      "title": "Chinese Exclusion Act",
+      "description": "Congress passes the first major law restricting immigration based on nationality, establishing the precedent that immigration policy is primarily a legislative function. The Act and subsequent Supreme Court cases affirmed broad federal power over immigration, setting the foundation for debates about executive versus legislative authority.",
+      "link": "https://en.wikipedia.org/wiki/Chinese_Exclusion_Act"
+    },
+    {
+      "year": "1952",
+      "title": "Immigration and Nationality Act",
+      "description": "Congress codifies comprehensive immigration law, including provisions allowing the Attorney General to grant temporary protected status and defer deportations for humanitarian reasons. This law becomes the statutory basis for many executive immigration programs and the legal battleground for presidential authority.",
+      "link": "https://en.wikipedia.org/wiki/Immigration_and_Nationality_Act_of_1952"
+    },
+    {
+      "year": "1990",
+      "title": "Temporary Protected Status Program Created",
+      "description": "Congress establishes TPS, allowing the executive branch to designate countries for temporary deportation protection due to armed conflict, natural disasters, or extraordinary conditions. The program grants legal status to hundreds of thousands while intentionally leaving designation decisions to executive discretion.",
+      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+    },
+    {
+      "year": "2001",
+      "title": "El Salvador Granted TPS After Earthquakes",
+      "description": "Following devastating earthquakes, the Bush administration grants TPS to Salvadorans, eventually covering over 200,000 people. The designation is repeatedly renewed for nearly two decades, illustrating how 'temporary' protections can become quasi-permanent, raising questions about congressional versus executive immigration policymaking.",
+      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+    },
+    {
+      "year": "2012",
+      "title": "DACA Program Established",
+      "description": "After Congress fails to pass the DREAM Act, President Obama creates Deferred Action for Childhood Arrivals through executive memorandum, protecting approximately 800,000 young immigrants from deportation. The controversial use of prosecutorial discretion sparks immediate legal challenges about the limits of executive immigration authority.",
+      "link": "https://en.wikipedia.org/wiki/Deferred_Action_for_Childhood_Arrivals"
+    },
+    {
+      "year": "2016",
+      "title": "United States v. Texas Blocks DAPA",
+      "description": "The Supreme Court deadlocks 4-4 on Obama's expanded deferred action program (DAPA), leaving in place a lower court ruling that the executive branch exceeded its authority. The decision demonstrates judicial willingness to limit presidential immigration power and foreshadows future battles over executive programs.",
+      "link": "https://en.wikipedia.org/wiki/United_States_v._Texas_(2016)"
+    },
+    {
+      "year": "2017-2018",
+      "title": "Trump Administration Terminates Multiple TPS Designations",
+      "description": "The Trump administration announces termination of TPS for Haiti, El Salvador, Honduras, Nepal, Nicaragua, and Sudan, affecting over 300,000 people. Legal challenges immediately arise questioning whether the terminations were arbitrary, capricious, or motivated by discriminatory animus.",
+      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+    },
+    {
+      "year": "2020",
+      "title": "DHS v. Regents Upholds DACA",
+      "description": "The Supreme Court rules 5-4 that the Trump administration's attempt to rescind DACA was 'arbitrary and capricious' under administrative law, though the Court acknowledges the executive likely has authority to end the program if done properly. The decision establishes that even discretionary programs require reasoned explanations for termination.",
+      "link": "https://en.wikipedia.org/wiki/Department_of_Homeland_Security_v._Regents_of_the_University_of_California"
+    },
+    {
+      "year": "2021",
+      "title": "Biden Restores TPS Designations",
+      "description": "President Biden reverses Trump-era terminations and expands TPS to additional countries including Venezuela and Afghanistan, covering over 600,000 people. The restoration demonstrates how executive immigration programs swing dramatically between administrations, raising concerns about stability and predictability.",
+      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+    },
+    {
+      "year": "2024-2025",
+      "title": "Legal Challenges Reach Supreme Court",
+      "description": "Courts consider whether presidents have unfettered discretion to revoke deportation protections or whether such decisions require substantial justification and are subject to judicial review. The cases test the boundaries of executive power, administrative law, and the separation of powers in immigration policy.",
+      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+    }
+  ],
+  "patterns": [
+    {
+      "title": "Executive Action Filling Congressional Gridlock",
+      "description": "When Congress fails to pass comprehensive immigration reform, presidents increasingly use executive authority to shape policy unilaterally. This pattern accelerated after 2001, with each administration pushing the boundaries of executive discretion further, creating legal uncertainty and political backlash."
+    },
+    {
+      "title": "Temporary Programs Becoming Quasi-Permanent",
+      "description": "Programs designed as temporary measures—from TPS to DACA—often extend for decades through repeated renewals, creating communities of people with ambiguous legal status. When termination is attempted, courts must weigh reliance interests against executive discretion, as seen in the DHS v. Regents case."
+    },
+    {
+      "title": "Judicial Review of Executive Discretion",
+      "description": "Courts increasingly scrutinize whether executive immigration decisions are 'arbitrary and capricious,' even in areas traditionally granted wide discretion. This represents a gradual expansion of judicial oversight into previously unreviewable executive decisions, changing the balance of power."
+    },
+    {
+      "title": "Immigration as Partisan Political Weapon",
+      "description": "Since the 1990s, deportation protections have become intensely partisan, with each new administration reversing its predecessor's policies. This whiplash creates instability for millions of immigrants and demonstrates how executive programs without congressional authorization are vulnerable to political changes."
+    }
+  ],
+  "furtherReading": [
+    {
+      "title": "Impossible Subjects: Illegal Aliens and the Making of Modern America",
+      "author": "Mae M. Ngai",
+      "type": "book",
+      "link": "https://en.wikipedia.org/wiki/Mae_Ngai"
+    },
+    {
+      "title": "A Nation of Immigrants",
+      "author": "John F. Kennedy",
+      "type": "book",
+      "link": "https://en.wikipedia.org/wiki/A_Nation_of_Immigrants"
+    },
+    {
+      "title": "Deportation Nation: Outsiders in American History",
+      "author": "Daniel Kanstroom",
+      "type": "book",
+      "link": "https://en.wikipedia.org/wiki/Deportation"
+    },
+    {
+      "title": "The New York Times: The Long Legal Battle Over DACA",
+      "author": "Various NYT reporters",
+      "type": "article",
+      "link": "https://en.wikipedia.org/wiki/Deferred_Action_for_Childhood_Arrivals"
+    },
+    {
+      "title": "Immigration Nation",
+      "author": "Netflix Documentary Series",
+      "type": "documentary",
+      "link": "https://en.wikipedia.org/wiki/Immigration_Nation"
+    }
+  ],
+  "whyItMattersNow": "This case will determine whether future presidents can unilaterally dismantle deportation protections affecting millions, or whether administrative law requires substantial justification even for discretionary decisions. The pattern of executive immigration programs swinging wildly between administrations—with DACA, TPS, and other protections repeatedly created, terminated, and restored—has created constitutional crisis and human uncertainty. The Court's decision will either empower unilateral executive control over immigration or establish that even broad discretionary authority has judicially enforceable limits, fundamentally reshaping the separation of powers in immigration policy for decades to come."
+}
