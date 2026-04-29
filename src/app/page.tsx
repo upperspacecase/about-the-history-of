@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
+import { useAuth } from "@/lib/firebase/auth-context";
 import { CATEGORIES, type Category } from "@/lib/categories";
 
 interface Headline {
@@ -48,6 +49,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<Category | "All">("All");
   const [activeSource, setActiveSource] = useState<string>("All");
   const [showDemo, setShowDemo] = useState(false);
+  const { user, signIn } = useAuth();
 
   useEffect(() => {
     fetch("/api/headlines")
@@ -90,25 +92,27 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1">
-      {/* Announcement banner */}
-      <div className="bg-accent text-white">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-          <span className="font-medium">
-            See the history of every news story.
-          </span>
-          <button
-            onClick={handleGetStarted}
-            className="px-3 py-1 rounded-full bg-white text-accent text-xs font-semibold uppercase tracking-wider hover:bg-white/90 transition-colors"
-          >
-            Get Started
-          </button>
+      {/* Announcement banner — hidden when signed in */}
+      {!user && (
+        <div className="bg-accent text-white">
+          <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+            <span className="font-medium">
+              See the history of every news story.
+            </span>
+            <button
+              onClick={() => signIn()}
+              className="px-3 py-1 rounded-full bg-white text-accent text-xs font-semibold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer"
+            >
+              Get Started
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Masthead */}
       <header className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 pt-6 pb-4 relative">
-          <div className="absolute right-6 top-6">
+          <div className="hidden sm:block absolute right-6 top-6">
             <SignInButton />
           </div>
           <div className="text-center">
@@ -225,33 +229,6 @@ export default function Home() {
               </li>
             </ul>
 
-            {headlines.length > 0 && (
-              <div className="mt-10 pt-8 border-t border-border">
-                <h3 className="text-xs font-medium uppercase tracking-widest text-muted mb-5">
-                  Today&apos;s headlines
-                </h3>
-                <ul className="space-y-4">
-                  {headlines.slice(0, 4).map((h, i) => (
-                    <li key={i}>
-                      <Link
-                        href={`/history?headline=${toSlug(h.title)}&source=${encodeURIComponent(h.source)}&link=${encodeURIComponent(h.link)}`}
-                        className="group block"
-                      >
-                        <p className="text-[11px] uppercase tracking-wider text-muted mb-1">
-                          {h.source} / {h.category}
-                        </p>
-                        <p
-                          className="text-sm font-semibold leading-snug group-hover:text-accent transition-colors"
-                          style={{ fontFamily: "var(--font-serif)" }}
-                        >
-                          {h.title}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </aside>
         </div>
       </section>
