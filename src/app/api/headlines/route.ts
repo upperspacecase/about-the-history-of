@@ -1,5 +1,7 @@
 import Parser from "rss-parser";
 
+export const revalidate = 600;
+
 interface FeedItemExtras {
   mediaThumbnail?: unknown;
   mediaContent?: unknown;
@@ -22,46 +24,39 @@ interface FeedSource {
 }
 
 const FEEDS: FeedSource[] = [
-  {
-    name: "BBC News",
-    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
-    category: "World",
-  },
-  {
-    name: "Al Jazeera",
-    url: "https://www.aljazeera.com/xml/rss/all.xml",
-    category: "World",
-  },
-  {
-    name: "Associated Press",
-    url: "https://rsshub.app/apnews/topics/apf-topnews",
-    category: "World",
-  },
-  {
-    name: "NPR",
-    url: "https://feeds.npr.org/1001/rss.xml",
-    category: "U.S.",
-  },
-  {
-    name: "BBC News",
-    url: "https://feeds.bbci.co.uk/news/politics/rss.xml",
-    category: "Politics",
-  },
-  {
-    name: "BBC News",
-    url: "https://feeds.bbci.co.uk/news/business/rss.xml",
-    category: "Business",
-  },
-  {
-    name: "BBC News",
-    url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
-    category: "Science",
-  },
-  {
-    name: "BBC News",
-    url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
-    category: "Technology",
-  },
+  // World
+  { name: "BBC News", url: "https://feeds.bbci.co.uk/news/world/rss.xml", category: "World" },
+  { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", category: "World" },
+  { name: "New York Times", url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", category: "World" },
+  { name: "CNN", url: "http://rss.cnn.com/rss/edition.rss", category: "World" },
+  { name: "Washington Post", url: "https://feeds.washingtonpost.com/rss/world", category: "World" },
+  { name: "Wall Street Journal", url: "https://feeds.a.dj.com/rss/RSSWorldNews.xml", category: "World" },
+
+  // U.S.
+  { name: "NPR", url: "https://feeds.npr.org/1001/rss.xml", category: "U.S." },
+
+  // Politics
+  { name: "BBC News", url: "https://feeds.bbci.co.uk/news/politics/rss.xml", category: "Politics" },
+  { name: "New York Times", url: "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml", category: "Politics" },
+  { name: "CNN", url: "http://rss.cnn.com/rss/cnn_allpolitics.rss", category: "Politics" },
+  { name: "Washington Post", url: "https://feeds.washingtonpost.com/rss/politics", category: "Politics" },
+
+  // Business
+  { name: "BBC News", url: "https://feeds.bbci.co.uk/news/business/rss.xml", category: "Business" },
+  { name: "New York Times", url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", category: "Business" },
+  { name: "CNN", url: "http://rss.cnn.com/rss/money_news_international.rss", category: "Business" },
+  { name: "Washington Post", url: "https://feeds.washingtonpost.com/rss/business", category: "Business" },
+  { name: "Wall Street Journal", url: "https://feeds.a.dj.com/rss/RSSWSJD.xml", category: "Business" },
+
+  // Science
+  { name: "BBC News", url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml", category: "Science" },
+  { name: "New York Times", url: "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml", category: "Science" },
+
+  // Technology
+  { name: "BBC News", url: "https://feeds.bbci.co.uk/news/technology/rss.xml", category: "Technology" },
+  { name: "New York Times", url: "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml", category: "Technology" },
+  { name: "CNN", url: "http://rss.cnn.com/rss/edition_technology.rss", category: "Technology" },
+  { name: "TechCrunch", url: "https://techcrunch.com/feed/", category: "Technology" },
 ];
 
 
@@ -108,7 +103,7 @@ function upgradeBbcImage(url: string): string {
 async function fetchFeed(feed: FeedSource): Promise<Headline[]> {
   try {
     const parsed = await parser.parseURL(feed.url);
-    return (parsed.items || []).slice(0, 8).map((item) => ({
+    return (parsed.items || []).slice(0, 5).map((item) => ({
       title: (item.title || "").trim(),
       link: item.link || "",
       source: feed.name,
@@ -150,5 +145,5 @@ export async function GET() {
     (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
   );
 
-  return Response.json({ headlines: unique.slice(0, 30) });
+  return Response.json({ headlines: unique.slice(0, 60) });
 }
