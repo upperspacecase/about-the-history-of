@@ -44,7 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       signIn: async () => {
-        await signInWithPopup(getClientAuth(), googleProvider);
+        const result = await signInWithPopup(getClientAuth(), googleProvider);
+        const idToken = await result.user.getIdToken();
+        // Fire-and-forget: creates Firestore user doc + sends welcome email on first sign-in
+        fetch("/api/users/init", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${idToken}` },
+        }).catch(() => {
+          /* non-blocking */
+        });
       },
       signOut: async () => {
         await fbSignOut(getClientAuth());
