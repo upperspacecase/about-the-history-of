@@ -45,6 +45,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category | "All">("All");
+  const [activeSource, setActiveSource] = useState<string>("All");
 
   useEffect(() => {
     fetch("/api/headlines")
@@ -59,12 +60,20 @@ export default function Home() {
       });
   }, []);
 
+  const sources = useMemo(() => {
+    const set = new Set<string>();
+    for (const h of headlines) if (h.source) set.add(h.source);
+    return Array.from(set).sort();
+  }, [headlines]);
+
   const filtered = useMemo(
     () =>
-      activeCategory === "All"
-        ? headlines
-        : headlines.filter((h) => h.category === activeCategory),
-    [headlines, activeCategory]
+      headlines.filter((h) => {
+        if (activeCategory !== "All" && h.category !== activeCategory) return false;
+        if (activeSource !== "All" && h.source !== activeSource) return false;
+        return true;
+      }),
+    [headlines, activeCategory, activeSource]
   );
 
   const lead = filtered[0];
@@ -114,6 +123,29 @@ export default function Home() {
             })}
           </div>
         </div>
+        {sources.length > 0 && (
+          <div className="border-t border-border bg-card/40">
+            <div className="max-w-6xl mx-auto px-6 py-2 flex gap-4 items-center text-[11px] tracking-wider overflow-x-auto">
+              <span className="uppercase text-muted shrink-0">Source</span>
+              {(["All", ...sources] as const).map((src) => {
+                const isActive = activeSource === src;
+                return (
+                  <button
+                    key={src}
+                    onClick={() => setActiveSource(src)}
+                    className={
+                      isActive
+                        ? "px-2 py-0.5 rounded-full border border-accent text-accent cursor-pointer shrink-0"
+                        : "px-2 py-0.5 rounded-full border border-border text-muted hover:text-accent hover:border-accent/40 transition-colors cursor-pointer shrink-0"
+                    }
+                  >
+                    {src}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Content */}
@@ -152,12 +184,15 @@ export default function Home() {
 
         {!loading && !error && headlines.length > 0 && filtered.length === 0 && (
           <div className="py-12 text-center text-muted">
-            <p>No headlines in {activeCategory} right now.</p>
+            <p>No headlines match this filter.</p>
             <button
-              onClick={() => setActiveCategory("All")}
+              onClick={() => {
+                setActiveCategory("All");
+                setActiveSource("All");
+              }}
               className="mt-3 text-accent underline text-sm"
             >
-              Show all
+              Reset filters
             </button>
           </div>
         )}
