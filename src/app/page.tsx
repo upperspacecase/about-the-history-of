@@ -12,6 +12,7 @@ interface Headline {
   category: string;
   pubDate: string;
   snippet: string;
+  image?: string;
 }
 
 function formatDate(dateStr: string) {
@@ -208,6 +209,17 @@ export default function Home() {
                     href={`/history?headline=${toSlug(lead.title)}&source=${encodeURIComponent(lead.source)}&link=${encodeURIComponent(lead.link)}`}
                     className="group block"
                   >
+                    {lead.image && (
+                      <div className="mb-4 aspect-[16/9] w-full overflow-hidden rounded-md bg-border">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={lead.image}
+                          alt=""
+                          loading="eager"
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                        />
+                      </div>
+                    )}
                     <span className="text-xs font-medium uppercase tracking-wider text-accent">
                       {lead.source} / {lead.category}
                     </span>
@@ -242,20 +254,33 @@ export default function Home() {
                   >
                     <Link
                       href={`/history?headline=${toSlug(h.title)}&source=${encodeURIComponent(h.source)}&link=${encodeURIComponent(h.link)}`}
-                      className="group block"
+                      className="group flex gap-3 items-start"
                     >
-                      <span className="text-xs font-medium uppercase tracking-wider text-muted">
-                        {h.source}
-                      </span>
-                      <h3
-                        className="text-lg font-semibold leading-snug mt-1 group-hover:text-accent transition-colors"
-                        style={{ fontFamily: "var(--font-serif)" }}
-                      >
-                        {h.title}
-                      </h3>
-                      <p className="mt-1 text-xs text-muted">
-                        {formatDate(h.pubDate)}
-                      </p>
+                      {h.image && (
+                        <div className="shrink-0 w-20 h-20 overflow-hidden rounded bg-border">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={h.image}
+                            alt=""
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <span className="text-xs font-medium uppercase tracking-wider text-muted">
+                          {h.source}
+                        </span>
+                        <h3
+                          className="text-lg font-semibold leading-snug mt-1 group-hover:text-accent transition-colors"
+                          style={{ fontFamily: "var(--font-serif)" }}
+                        >
+                          {h.title}
+                        </h3>
+                        <p className="mt-1 text-xs text-muted">
+                          {formatDate(h.pubDate)}
+                        </p>
+                      </div>
                     </Link>
                   </div>
                 ))}
@@ -275,6 +300,17 @@ export default function Home() {
                       href={`/history?headline=${toSlug(h.title)}&source=${encodeURIComponent(h.source)}&link=${encodeURIComponent(h.link)}`}
                       className="group block pb-6 border-b border-border"
                     >
+                      {h.image && (
+                        <div className="mb-2 aspect-[16/9] w-full overflow-hidden rounded bg-border">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={h.image}
+                            alt=""
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                          />
+                        </div>
+                      )}
                       <span className="text-xs font-medium uppercase tracking-wider text-muted">
                         {h.source}
                       </span>

@@ -1,7 +1,18 @@
 import Parser from "rss-parser";
 
-const parser = new Parser({
+interface FeedItemExtras {
+  mediaThumbnail?: unknown;
+  mediaContent?: unknown;
+}
+
+const parser: Parser<unknown, FeedItemExtras> = new Parser({
   timeout: 10000,
+  customFields: {
+    item: [
+      ["media:thumbnail", "mediaThumbnail", { keepArray: true }],
+      ["media:content", "mediaContent", { keepArray: true }],
+    ],
+  },
 });
 
 interface FeedSource {
@@ -61,6 +72,37 @@ export interface Headline {
   category: string;
   pubDate: string;
   snippet: string;
+  image?: string;
+}
+
+function extractImage(item: Parser.Item & FeedItemExtras): string | undefined {
+  // <media:thumbnail url="..." />
+  const thumb = item.mediaThumbnail;
+  if (Array.isArray(thumb) && thumb.length > 0) {
+    const url = (thumb[0] as { $?: { url?: string } })?.$?.url;
+    if (url) return upgradeBbcImage(url);
+  }
+  // <media:content url="..." />
+  const content = item.mediaContent;
+  if (Array.isArray(content) && content.length > 0) {
+    const url = (content[0] as { $?: { url?: string } })?.$?.url;
+    if (url) return upgradeBbcImage(url);
+  }
+  // <enclosure url="..." type="image/..." />
+  const enclosure = item.enclosure;
+  if (enclosure?.url && enclosure.type?.startsWith("image/")) {
+    return enclosure.url;
+  }
+  return undefined;
+}
+
+function upgradeBbcImage(url: string): string {
+  // BBC ichef URLs look like: https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/...
+  // Larger preset (976) is available and renders cleanly in the lead card.
+  return url.replace(
+    /(ichef\.bbci\.co\.uk\/[a-z]+\/[a-z]+\/)\d+\//,
+    "$1976/"
+  );
 }
 
 async function fetchFeed(feed: FeedSource): Promise<Headline[]> {
@@ -76,6 +118,7 @@ async function fetchFeed(feed: FeedSource): Promise<Headline[]> {
         .replace(/<[^>]*>/g, "")
         .slice(0, 200)
         .trim(),
+      image: extractImage(item),
     }));
   } catch (err) {
     console.error(`Failed to fetch ${feed.name}:`, err);
