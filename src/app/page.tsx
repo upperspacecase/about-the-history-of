@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
+import { SignificanceDots } from "@/components/significance-dots";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CATEGORIES, type Category } from "@/lib/categories";
 
@@ -15,8 +16,11 @@ interface Headline {
   snippet: string;
   image?: string;
   truthHeadline?: string;
+  significance?: number;
+  significanceReason?: string;
   hasHistory?: boolean;
 }
+
 
 function formatDate(dateStr: string) {
   try {
@@ -382,9 +386,17 @@ export default function Home() {
                     />
                   </div>
                 )}
-                <span className="text-xs font-medium uppercase tracking-wider text-muted">
-                  {h.source} / {h.category}
-                </span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted">
+                    {h.source} / {h.category}
+                  </span>
+                  {typeof h.significance === "number" && (
+                    <SignificanceDots
+                      score={h.significance}
+                      reason={h.significanceReason}
+                    />
+                  )}
+                </div>
                 {h.truthHeadline ? (
                   <div className="mt-1 space-y-1">
                     <h3

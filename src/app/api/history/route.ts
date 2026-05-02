@@ -10,6 +10,8 @@ const SYSTEM_PROMPT = `You are a historian and analyst. Given a news headline, p
 Your response must be valid JSON with this exact structure:
 {
   "truthHeadline": "A single rewritten headline (max 120 characters) that states the deeper truth and historical context behind the original — what is *really* going on, beyond the surface framing. Write it as a real headline, not a description.",
+  "significance": 7,
+  "significanceReason": "One sentence (max 140 characters) explaining the score in historical terms. What makes this consequential — or trivial — given the timeline and patterns above?",
   "topic": "The core historical topic extracted from the headline (e.g. 'U.S. Federal Reserve Interest Rate Policy')",
   "summary": "A 2-3 sentence overview connecting the headline to its deeper historical roots. Write in a clear, authoritative editorial voice.",
   "timeline": [
@@ -39,6 +41,13 @@ Your response must be valid JSON with this exact structure:
 
 Guidelines:
 - The truthHeadline should reframe the original in light of the historical record — make the unspoken context legible. Keep it punchy and headline-shaped, never a sentence with a period at the end unless punctuation is integral.
+- The significance score is an integer from 1 to 10 measuring how consequential this story is in the grander historical scheme — judged AFTER you've written the timeline and patterns. Anchor your score:
+  - 1-2: Trivial. Celebrity gossip, sports results with no broader stakes, fluff.
+  - 3-4: Routine news. Local incidents, ordinary corporate moves, predictable political theater.
+  - 5-6: Notable. A meaningful policy shift, a credible leadership change, a tech release that nudges an industry.
+  - 7-8: Consequential. A development likely to be cited in this decade's history — major elections, sustained crises, landmark legal rulings, sizable wars or economic shocks.
+  - 9-10: Generational/historic. The kind of event that reshapes the order — the start or end of an era. Use sparingly.
+  - Be honest. Most news is 3-5. Reserve 8+ for events that genuinely belong in the timeline you just wrote.
 - Include 6-10 timeline events, ordered chronologically
 - Include 3-4 recurring patterns
 - Include 3-5 further reading recommendations
@@ -51,6 +60,8 @@ Guidelines:
 interface HistoryDoc {
   headline: string;
   truthHeadline: string;
+  significance: number;
+  significanceReason: string;
   topic: string;
   summary: string;
   timeline: unknown[];
@@ -145,7 +156,21 @@ export async function POST(request: Request) {
       .trim();
     const parsed = JSON.parse(cleaned) as Omit<HistoryDoc, "headline">;
 
-    const doc: HistoryDoc = { headline: result, ...parsed };
+    const significance = Math.min(
+      10,
+      Math.max(1, Math.round(Number(parsed.significance) || 5))
+    );
+    const doc: HistoryDoc = {
+      ...parsed,
+      headline: result,
+      significance,
+      significanceReason:
+        typeof parsed.significanceReason === "string"
+          ? parsed.significanceReason
+          : "",
+      truthHeadline:
+        typeof parsed.truthHeadline === "string" ? parsed.truthHeadline : "",
+    };
     await ref.set({
       ...doc,
       generatedBy: uid,

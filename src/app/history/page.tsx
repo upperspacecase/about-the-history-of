@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { SignInButton } from "@/components/sign-in-button";
+import { SignificanceDots } from "@/components/significance-dots";
 
 interface TimelineEvent {
   year: string;
@@ -29,6 +30,8 @@ interface HistoryResponse {
   topic: string;
   summary: string;
   truthHeadline?: string;
+  significance?: number;
+  significanceReason?: string;
   timeline: TimelineEvent[];
   patterns: Pattern[];
   furtherReading: FurtherReading[];
@@ -180,6 +183,28 @@ function HistoryContent() {
             >
               {headline}
             </h1>
+          )}
+          {typeof result?.significance === "number" && (
+            <div className="mt-5 flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] uppercase tracking-widest text-muted">
+                  Historical significance
+                </span>
+                <SignificanceDots
+                  score={result.significance}
+                  reason={result.significanceReason}
+                  size="lg"
+                />
+                <span className="text-xs font-mono text-muted">
+                  {result.significance}/10
+                </span>
+              </div>
+              {result.significanceReason && (
+                <p className="text-sm text-muted leading-snug max-w-2xl">
+                  {result.significanceReason}
+                </p>
+              )}
+            </div>
           )}
           {originalLink && (
             <a
