@@ -1,8 +1,9 @@
 import Parser from "rss-parser";
+import { unstable_cache } from "next/cache";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { headlineKey } from "@/lib/history-key";
 
-export const revalidate = 600;
+export const dynamic = "force-dynamic";
 
 interface FeedItemExtras {
   mediaThumbnail?: unknown;
@@ -127,31 +128,37 @@ async function fetchFeed(feed: FeedSource): Promise<Headline[]> {
   }
 }
 
-export async function GET() {
-  const results = await Promise.allSettled(FEEDS.map(fetchFeed));
-  const headlines: Headline[] = [];
-
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      headlines.push(...result.value);
+const fetchTopHeadlines = unstable_cache(
+  async (): Promise<Headline[]> => {
+    const results = await Promise.allSettled(FEEDS.map(fetchFeed));
+    const headlines: Headline[] = [];
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        headlines.push(...result.value);
+      }
     }
-  }
 
-  // Deduplicate by title similarity and sort by date
-  const seen = new Set<string>();
-  const unique = headlines.filter((h) => {
-    if (!h.title) return false;
-    const key = h.title.toLowerCase().slice(0, 60);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+    const seen = new Set<string>();
+    const unique = headlines.filter((h) => {
+      if (!h.title) return false;
+      const key = h.title.toLowerCase().slice(0, 60);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
-  unique.sort(
-    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-  );
+    unique.sort(
+      (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+    );
 
-  const top = unique.slice(0, 60);
+    return unique.slice(0, 60);
+  },
+  ["headlines-rss-top"],
+  { revalidate: 600 }
+);
+
+export async function GET() {
+  const top = await fetchTopHeadlines();
   const enriched = await attachHistory(top);
 
   enriched.sort((a, b) => {

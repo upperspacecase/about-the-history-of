@@ -38,6 +38,14 @@ interface HistoryResponse {
   whyItMattersNow: string;
 }
 
+const GENERATION_STAGES = [
+  "Searching the archive…",
+  "Tracing the timeline…",
+  "Identifying recurring patterns…",
+  "Scoring its place in history…",
+  "Writing the truth headline…",
+];
+
 function HistoryContent() {
   const searchParams = useSearchParams();
   const headline = searchParams.get("headline") || "";
@@ -51,6 +59,16 @@ function HistoryContent() {
   const [generating, setGenerating] = useState(false);
   const [needsSignIn, setNeedsSignIn] = useState(false);
   const [error, setError] = useState("");
+  const [stageIndex, setStageIndex] = useState(0);
+
+  useEffect(() => {
+    if (!generating) return;
+    setStageIndex(0);
+    const interval = setInterval(() => {
+      setStageIndex((s) => (s + 1) % GENERATION_STAGES.length);
+    }, 2400);
+    return () => clearInterval(interval);
+  }, [generating]);
 
   const generate = useCallback(async () => {
     setError("");
@@ -230,49 +248,28 @@ function HistoryContent() {
 
         {/* Loading */}
         {(loading || generating) && (
-          <div className="space-y-8 py-8">
-            <div className="space-y-3">
-              <div
-                className="h-6 bg-border rounded animate-pulse-bar"
-                style={{ width: "60%" }}
-              />
-              <div
-                className="h-4 bg-border/60 rounded animate-pulse-bar"
-                style={{ width: "90%", animationDelay: "0.1s" }}
-              />
-              <div
-                className="h-4 bg-border/60 rounded animate-pulse-bar"
-                style={{ width: "75%", animationDelay: "0.2s" }}
-              />
-            </div>
-            <div className="space-y-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex gap-4">
-                  <div
-                    className="w-16 h-4 bg-border rounded animate-pulse-bar"
-                    style={{ animationDelay: `${0.3 + i * 0.15}s` }}
-                  />
-                  <div className="flex-1 space-y-2">
-                    <div
-                      className="h-4 bg-border rounded animate-pulse-bar"
-                      style={{ width: "70%", animationDelay: `${0.4 + i * 0.15}s` }}
-                    />
-                    <div
-                      className="h-3 bg-border/60 rounded animate-pulse-bar"
-                      style={{ width: "50%", animationDelay: `${0.5 + i * 0.15}s` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-center text-sm text-muted pt-4">
+          <div className="flex flex-col items-center justify-center gap-5 py-20 text-center">
+            <div
+              className="h-10 w-10 rounded-full border-2 border-border border-t-accent animate-spin"
+              role="status"
+              aria-label="Loading"
+            />
+            <p
+              key={generating ? stageIndex : "checking"}
+              className="text-sm text-muted animate-fade-in"
+            >
               {generating
-                ? "Researching the historical record..."
-                : "Checking the archive..."}
+                ? GENERATION_STAGES[stageIndex]
+                : "Checking the archive…"}
             </p>
+            {generating && (
+              <p className="text-xs text-muted/70 max-w-sm">
+                This usually takes 15–30 seconds. The result is saved so the
+                next reader sees it instantly.
+              </p>
+            )}
           </div>
         )}
-
         {/* Sign-in / generate prompt */}
         {!loading && !generating && !result && needsSignIn && !error && (
           <div className="py-12 text-center max-w-md mx-auto">
