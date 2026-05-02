@@ -9,6 +9,7 @@ const SYSTEM_PROMPT = `You are a historian and analyst. Given a news headline, p
 
 Your response must be valid JSON with this exact structure:
 {
+  "truthHeadline": "A single rewritten headline (max 120 characters) that states the deeper truth and historical context behind the original — what is *really* going on, beyond the surface framing. Write it as a real headline, not a description.",
   "topic": "The core historical topic extracted from the headline (e.g. 'U.S. Federal Reserve Interest Rate Policy')",
   "summary": "A 2-3 sentence overview connecting the headline to its deeper historical roots. Write in a clear, authoritative editorial voice.",
   "timeline": [
@@ -37,6 +38,7 @@ Your response must be valid JSON with this exact structure:
 }
 
 Guidelines:
+- The truthHeadline should reframe the original in light of the historical record — make the unspoken context legible. Keep it punchy and headline-shaped, never a sentence with a period at the end unless punctuation is integral.
 - Include 6-10 timeline events, ordered chronologically
 - Include 3-4 recurring patterns
 - Include 3-5 further reading recommendations
@@ -48,6 +50,7 @@ Guidelines:
 
 interface HistoryDoc {
   headline: string;
+  truthHeadline: string;
   topic: string;
   summary: string;
   timeline: unknown[];

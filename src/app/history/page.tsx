@@ -28,6 +28,7 @@ interface FurtherReading {
 interface HistoryResponse {
   topic: string;
   summary: string;
+  truthHeadline?: string;
   timeline: TimelineEvent[];
   patterns: Pattern[];
   furtherReading: FurtherReading[];
@@ -157,12 +158,29 @@ function HistoryContent() {
               {source}
             </span>
           )}
-          <h1
-            className="text-3xl sm:text-4xl font-bold leading-tight mt-2"
-            style={{ fontFamily: "var(--font-serif)" }}
-          >
-            {headline}
-          </h1>
+          {result?.truthHeadline ? (
+            <div className="mt-2 space-y-2">
+              <h1
+                className="text-3xl sm:text-4xl font-bold leading-tight text-green-700 dark:text-green-500"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                {result.truthHeadline}
+              </h1>
+              <p
+                className="text-xl sm:text-2xl leading-snug line-through text-muted decoration-muted/60"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                {headline}
+              </p>
+            </div>
+          ) : (
+            <h1
+              className="text-3xl sm:text-4xl font-bold leading-tight mt-2"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              {headline}
+            </h1>
+          )}
           {originalLink && (
             <a
               href={originalLink}

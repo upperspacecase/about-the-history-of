@@ -1,4 +1,6 @@
 import Parser from "rss-parser";
+import { getAdminDb } from "@/lib/firebase/admin";
+import { headlineKey } from "@/lib/history-key";
 
 export const revalidate = 600;
 
@@ -68,6 +70,8 @@ export interface Headline {
   pubDate: string;
   snippet: string;
   image?: string;
+  truthHeadline?: string;
+  hasHistory?: boolean;
 }
 
 function extractImage(item: Parser.Item & FeedItemExtras): string | undefined {
@@ -145,5 +149,42 @@ export async function GET() {
     (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
   );
 
-  return Response.json({ headlines: unique.slice(0, 60) });
+  const top = unique.slice(0, 60);
+  const enriched = await attachHistory(top);
+
+  enriched.sort((a, b) => {
+    const aHas = a.hasHistory ? 1 : 0;
+    const bHas = b.hasHistory ? 1 : 0;
+    if (aHas !== bHas) return bHas - aHas;
+    return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
+  });
+
+  return Response.json({ headlines: enriched });
+}
+
+async function attachHistory(headlines: Headline[]): Promise<Headline[]> {
+  if (headlines.length === 0) return headlines;
+  try {
+    const db = getAdminDb();
+    const refs = headlines.map((h) =>
+      db.collection("histories").doc(headlineKey(h.title))
+    );
+    const snaps = await db.getAll(...refs);
+    return headlines.map((h, i) => {
+      const snap = snaps[i];
+      if (!snap.exists) return h;
+      const data = snap.data() as { truthHeadline?: string } | undefined;
+      return {
+        ...h,
+        hasHistory: true,
+        truthHeadline:
+          typeof data?.truthHeadline === "string" && data.truthHeadline.trim()
+            ? data.truthHeadline
+            : undefined,
+      };
+    });
+  } catch (err) {
+    console.error("Failed to attach history metadata:", err);
+    return headlines;
+  }
 }
