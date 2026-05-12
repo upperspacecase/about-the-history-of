@@ -77,7 +77,7 @@ export const Homepage = () => {
             marginBottom: 12,
           }}
         >
-          Tuesday, April 14, 2026
+          Tuesday, May 12, 2026
         </p>
         <h1
           style={{
@@ -88,10 +88,10 @@ export const Homepage = () => {
             margin: 0,
           }}
         >
-          About the History of...
+          The Long View
         </h1>
         <p style={{ fontSize: 22, color: theme.muted, marginTop: 12 }}>
-          Today&apos;s headlines. The history behind them.
+          Headlines through a corrective lens
         </p>
         <div
           style={{
