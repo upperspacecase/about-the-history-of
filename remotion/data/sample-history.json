@@ -1,65 +1,53 @@
 {
   "id": "b8f4a9d2c1e347f085c2a13e9b6d5f48",
   "headline": "Musk Lawyer’s Question for Sam Altman on the Stand: Are You Trustworthy?",
-  "truthHeadline": "OpenAI’s ex-founders go to court over a nonprofit promise they made and broke",
-  "significance": 7,
-  "significanceReason": "A landmark test of whether AI labs can shed the founding charters they used to attract talent, money, and public trust.",
+  "truthHeadline": "Tech Billionaires Battle Over Who Controls AI Future—Old Silicon Valley Breakup Turns Into Lawsuit",
+  "significance": 6,
+  "significanceReason": "Reflects ongoing power struggle over AI governance between rival visions, but resembles past tech feuds more than a turning point.",
   "source": null,
-  "topic": "Tech Founders and the Battle Over a Lab’s Founding Mission",
-  "summary": "The courtroom clash between Elon Musk and Sam Altman echoes more than a century of fights between tech co-founders who started with shared idealism and ended in bitter rivalry. From Tesla and Edison to Jobs and Wozniak, the question of who controls a powerful technology — and who profits from it — has produced repeated legal showdowns. Today’s case adds a new wrinkle: a nonprofit research mission abandoned for billion-dollar funding, with a trial-by-deposition over whether the lab’s leader can still be trusted.",
+  "topic": "OpenAI Governance Dispute and AI Industry Control",
+  "summary": "Elon Musk is suing Sam Altman over OpenAI's transformation from nonprofit to profit-driven company, echoing decades of Silicon Valley power struggles over technology's direction. This follows a pattern where founding idealists clash when billions of dollars enter the picture, from early internet disputes to social media control battles. The real fight is about who shapes AI's future—and whether it serves humanity or shareholders.",
   "timeline": [
     {
-      "year": "1888",
-      "title": "The War of the Currents",
-      "description": "Thomas Edison and Nikola Tesla, once collaborators, fought a public and legal battle over whether electricity should be distributed as direct or alternating current. Their personal split reshaped an entire industry and set a template for founder feuds becoming infrastructure disputes.",
-      "link": "https://en.wikipedia.org/wiki/War_of_the_currents"
-    },
-    {
-      "year": "1985",
-      "title": "Steve Jobs Forced Out of Apple",
-      "description": "After a boardroom power struggle, Apple co-founder Steve Jobs was pushed out of the company he started — a dispute that hinged on questions of trust, control, and whether the mission belonged to its founders or its board.",
-      "link": "https://en.wikipedia.org/wiki/History_of_Apple_Inc."
-    },
-    {
-      "year": "2004",
-      "title": "Winklevoss Twins Sue Facebook’s Mark Zuckerberg",
-      "description": "Cameron and Tyler Winklevoss accused Zuckerberg of stealing the idea for Facebook from their HarvardConnection project. The case foreshadowed a decade of high-profile lawsuits over who actually owned the early ideas behind transformative platforms.",
-      "link": "https://en.wikipedia.org/wiki/ConnectU"
-    },
-    {
       "year": "2015",
-      "title": "OpenAI Founded as a Nonprofit",
-      "description": "Elon Musk, Sam Altman, and others launched OpenAI with a charter to develop artificial general intelligence safely and for humanity’s benefit. The founders pledged more than a billion dollars and explicitly framed the lab as a public-interest counterweight to corporate AI.",
+      "title": "OpenAI Founded as Nonprofit",
+      "description": "Elon Musk, Sam Altman, and others created OpenAI as a nonprofit to develop safe artificial general intelligence for humanity's benefit, explicitly rejecting profit motives that might compromise safety.",
       "link": "https://en.wikipedia.org/wiki/OpenAI"
     },
     {
       "year": "2018",
       "title": "Musk Departs the OpenAI Board",
-      "description": "Citing conflicts with Tesla’s own AI work, Elon Musk left the OpenAI board. Inside the lab, leaders increasingly believed that staying purely nonprofit would not let them raise the capital needed to compete on frontier models.",
+      "description": "Citing conflicts with Tesla's own AI work, Elon Musk leaves the OpenAI board. Inside the lab, leaders increasingly believe staying purely nonprofit will not let them raise the capital needed to compete on frontier models.",
       "link": "https://en.wikipedia.org/wiki/OpenAI"
     },
     {
       "year": "2019",
-      "title": "OpenAI Creates a ‘Capped-Profit’ Arm",
-      "description": "OpenAI restructured into a hybrid in which a for-profit subsidiary could raise outside capital while reporting to the original nonprofit. Microsoft soon invested $1 billion, beginning a partnership that would reach into the tens of billions.",
+      "title": "OpenAI Creates a Capped-Profit Arm",
+      "description": "OpenAI restructures into a hybrid where a for-profit subsidiary can raise outside capital while reporting to the original nonprofit. Microsoft soon invests $1 billion, beginning a partnership that grows into the tens of billions.",
       "link": "https://en.wikipedia.org/wiki/OpenAI"
+    },
+    {
+      "year": "2022",
+      "title": "ChatGPT Goes Public",
+      "description": "OpenAI releases ChatGPT, which reaches 100 million users in two months and turns the lab into the public face of generative AI — sharpening every internal debate about commercialization and safety.",
+      "link": "https://en.wikipedia.org/wiki/ChatGPT"
     },
     {
       "year": "2023",
       "title": "Altman Fired and Reinstated in Five Days",
-      "description": "OpenAI’s nonprofit board abruptly fired Sam Altman over a loss of confidence, then reversed itself within days under pressure from employees and Microsoft. The episode exposed how fragile the lab’s mission-driven governance had become.",
+      "description": "OpenAI's nonprofit board abruptly fires Sam Altman over a loss of confidence, then reverses itself within days under pressure from employees and Microsoft, exposing how fragile the mission-driven governance has become.",
       "link": "https://en.wikipedia.org/wiki/Sam_Altman"
     },
     {
       "year": "2024",
       "title": "Musk Sues OpenAI and Altman",
-      "description": "Musk filed suit alleging OpenAI had abandoned its founding nonprofit mission in pursuit of profit and Microsoft’s influence. The complaint reframed the company’s entire restructuring as a breach of the promises that drew its earliest funders and researchers.",
+      "description": "Musk files suit alleging OpenAI has abandoned its founding nonprofit mission in pursuit of profit and Microsoft's influence. The complaint reframes the company's restructuring as a breach of the promises that drew its earliest funders and researchers.",
       "link": "https://en.wikipedia.org/wiki/OpenAI"
     },
     {
       "year": "2026",
       "title": "Altman Takes the Stand",
-      "description": "With Altman under oath, Musk’s lawyers press him on whether the public, regulators, and former colleagues can still trust his account of how OpenAI’s mission was rewritten. The trial becomes the first major test of whether a nonprofit AI charter is a binding promise or a marketing document.",
+      "description": "With Altman under oath, Musk's lawyers press him on whether the public, regulators, and former colleagues can still trust his account of how OpenAI's mission was rewritten — making the trial the first major test of whether a nonprofit AI charter is a binding promise or a marketing document.",
       "link": "https://en.wikipedia.org/wiki/OpenAI"
     }
   ],
@@ -78,7 +66,7 @@
     },
     {
       "title": "The trust question in transformative tech",
-      "description": "Each generation of powerful technology — railroads, broadcast, the internet, AI — eventually triggers a public reckoning over who can be trusted to steward it. The cross-examination of a lab’s CEO is the modern form of that older question."
+      "description": "Each generation of powerful technology — railroads, broadcast, the internet, AI — eventually triggers a public reckoning over who can be trusted to steward it. The cross-examination of a lab's CEO is the modern form of that older question."
     }
   ],
   "furtherReading": [
@@ -107,5 +95,5 @@
       "link": "https://en.wikipedia.org/wiki/The_Social_Network"
     }
   ],
-  "whyItMattersNow": "This trial will set precedent for whether nonprofit research labs can convert into commercial powerhouses without breaking the charters they used to attract early talent and capital. The deeper pattern — founders fighting over a transformative technology’s soul — has played out for more than a century, but the stakes are unusually high because AI is being built right now under the rules these proceedings will help define. Whether the court treats OpenAI’s mission as a binding promise or a marketing slogan will shape how the next decade of AI labs are funded, governed, and trusted."
+  "whyItMattersNow": "This trial will set precedent for whether nonprofit research labs can convert into commercial powerhouses without breaking the charters they used to attract early talent and capital. The deeper pattern — founders fighting over a transformative technology's soul — has played out for more than a century, but the stakes are unusually high because AI is being built right now under the rules these proceedings will help define. Whether the court treats OpenAI's mission as a binding promise or a marketing slogan will shape how the next decade of AI labs are funded, governed, and trusted."
 }
