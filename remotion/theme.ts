@@ -12,11 +12,11 @@ export const theme = {
 
 export const HEADLINES = [
   {
-    title: "Supreme Court Considers Trump’s Plan to Revoke Deportation Protections",
+    title: "Musk Lawyer’s Question for Sam Altman on the Stand: Are You Trustworthy?",
     source: "New York Times",
-    category: "Politics",
+    category: "Technology",
     snippet:
-      "Justices weigh whether the executive branch can unilaterally end Temporary Protected Status, a question that tests the limits of presidential power over immigration.",
+      "Inside a packed courtroom, attorneys for Elon Musk pressed OpenAI’s chief executive on whether the lab’s nonprofit founders were misled when it pivoted toward commercial AI.",
     date: "May 12, 9:24 AM",
   },
   {
@@ -26,9 +26,9 @@ export const HEADLINES = [
     date: "May 12, 8:51 AM",
   },
   {
-    title: "AI Regulation Bill Advances in Senate",
-    source: "Al Jazeera",
-    category: "Technology",
+    title: "Supreme Court Considers Trump’s Plan to Revoke Deportation Protections",
+    source: "Washington Post",
+    category: "Politics",
     date: "May 12, 7:40 AM",
   },
   {
@@ -44,10 +44,10 @@ export const HEADLINES = [
     snippet: "Meteorologists warn of cascading food supply effects.",
   },
   {
-    title: "Tech Giants Face New Antitrust Scrutiny",
+    title: "AI Regulation Bill Advances in Senate",
     source: "Al Jazeera",
     category: "Technology",
-    snippet: "Regulators on both sides of the Atlantic coordinate on probe.",
+    snippet: "Bipartisan framework reaches floor vote after years of stalemate.",
   },
   {
     title: "Coastal Cities Weigh Seawall Investments",

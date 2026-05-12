@@ -1,123 +1,111 @@
 {
-  "id": "2514abb5cf56405b10d60ff50572b360",
-  "headline": "Supreme Court Considers Trump’s Plan to Revoke Deportation Protections",
-  "truthHeadline": "Court tests how far one president can change immigration rules on his own",
-  "significance": 8,
-  "significanceReason": "A ruling here will reset how much immigration policy a single president can rewrite without Congress — a recurring fight since 1882.",
+  "id": "b8f4a9d2c1e347f085c2a13e9b6d5f48",
+  "headline": "Musk Lawyer’s Question for Sam Altman on the Stand: Are You Trustworthy?",
+  "truthHeadline": "OpenAI’s ex-founders go to court over a nonprofit promise they made and broke",
+  "significance": 7,
+  "significanceReason": "A landmark test of whether AI labs can shed the founding charters they used to attract talent, money, and public trust.",
   "source": null,
-  "topic": "U.S. Immigration Policy and Executive Authority Over Protected Status Programs",
-  "summary": "The Supreme Court's consideration of executive authority over deportation protections continues a century-long tension between presidential power, congressional intent, and humanitarian immigration policy. From the Chinese Exclusion Act to DACA, the question of who decides which immigrants can remain in America has shaped the nation's identity and tested the limits of executive action. Today's case echoes historical moments when courts determined whether presidents can unilaterally reshape immigration law.",
+  "topic": "Tech Founders and the Battle Over a Lab’s Founding Mission",
+  "summary": "The courtroom clash between Elon Musk and Sam Altman echoes more than a century of fights between tech co-founders who started with shared idealism and ended in bitter rivalry. From Tesla and Edison to Jobs and Wozniak, the question of who controls a powerful technology — and who profits from it — has produced repeated legal showdowns. Today’s case adds a new wrinkle: a nonprofit research mission abandoned for billion-dollar funding, with a trial-by-deposition over whether the lab’s leader can still be trusted.",
   "timeline": [
     {
-      "year": "1882",
-      "title": "Chinese Exclusion Act",
-      "description": "Congress passes the first major law restricting immigration based on nationality, establishing the precedent that immigration policy is primarily a legislative function. The Act and subsequent Supreme Court cases affirmed broad federal power over immigration, setting the foundation for debates about executive versus legislative authority.",
-      "link": "https://en.wikipedia.org/wiki/Chinese_Exclusion_Act"
+      "year": "1888",
+      "title": "The War of the Currents",
+      "description": "Thomas Edison and Nikola Tesla, once collaborators, fought a public and legal battle over whether electricity should be distributed as direct or alternating current. Their personal split reshaped an entire industry and set a template for founder feuds becoming infrastructure disputes.",
+      "link": "https://en.wikipedia.org/wiki/War_of_the_currents"
     },
     {
-      "year": "1952",
-      "title": "Immigration and Nationality Act",
-      "description": "Congress codifies comprehensive immigration law, including provisions allowing the Attorney General to grant temporary protected status and defer deportations for humanitarian reasons. This law becomes the statutory basis for many executive immigration programs and the legal battleground for presidential authority.",
-      "link": "https://en.wikipedia.org/wiki/Immigration_and_Nationality_Act_of_1952"
+      "year": "1985",
+      "title": "Steve Jobs Forced Out of Apple",
+      "description": "After a boardroom power struggle, Apple co-founder Steve Jobs was pushed out of the company he started — a dispute that hinged on questions of trust, control, and whether the mission belonged to its founders or its board.",
+      "link": "https://en.wikipedia.org/wiki/History_of_Apple_Inc."
     },
     {
-      "year": "1990",
-      "title": "Temporary Protected Status Program Created",
-      "description": "Congress establishes TPS, allowing the executive branch to designate countries for temporary deportation protection due to armed conflict, natural disasters, or extraordinary conditions. The program grants legal status to hundreds of thousands while intentionally leaving designation decisions to executive discretion.",
-      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+      "year": "2004",
+      "title": "Winklevoss Twins Sue Facebook’s Mark Zuckerberg",
+      "description": "Cameron and Tyler Winklevoss accused Zuckerberg of stealing the idea for Facebook from their HarvardConnection project. The case foreshadowed a decade of high-profile lawsuits over who actually owned the early ideas behind transformative platforms.",
+      "link": "https://en.wikipedia.org/wiki/ConnectU"
     },
     {
-      "year": "2001",
-      "title": "El Salvador Granted TPS After Earthquakes",
-      "description": "Following devastating earthquakes, the Bush administration grants TPS to Salvadorans, eventually covering over 200,000 people. The designation is repeatedly renewed for nearly two decades, illustrating how 'temporary' protections can become quasi-permanent, raising questions about congressional versus executive immigration policymaking.",
-      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+      "year": "2015",
+      "title": "OpenAI Founded as a Nonprofit",
+      "description": "Elon Musk, Sam Altman, and others launched OpenAI with a charter to develop artificial general intelligence safely and for humanity’s benefit. The founders pledged more than a billion dollars and explicitly framed the lab as a public-interest counterweight to corporate AI.",
+      "link": "https://en.wikipedia.org/wiki/OpenAI"
     },
     {
-      "year": "2012",
-      "title": "DACA Program Established",
-      "description": "After Congress fails to pass the DREAM Act, President Obama creates Deferred Action for Childhood Arrivals through executive memorandum, protecting approximately 800,000 young immigrants from deportation. The controversial use of prosecutorial discretion sparks immediate legal challenges about the limits of executive immigration authority.",
-      "link": "https://en.wikipedia.org/wiki/Deferred_Action_for_Childhood_Arrivals"
+      "year": "2018",
+      "title": "Musk Departs the OpenAI Board",
+      "description": "Citing conflicts with Tesla’s own AI work, Elon Musk left the OpenAI board. Inside the lab, leaders increasingly believed that staying purely nonprofit would not let them raise the capital needed to compete on frontier models.",
+      "link": "https://en.wikipedia.org/wiki/OpenAI"
     },
     {
-      "year": "2016",
-      "title": "United States v. Texas Blocks DAPA",
-      "description": "The Supreme Court deadlocks 4-4 on Obama's expanded deferred action program (DAPA), leaving in place a lower court ruling that the executive branch exceeded its authority. The decision demonstrates judicial willingness to limit presidential immigration power and foreshadows future battles over executive programs.",
-      "link": "https://en.wikipedia.org/wiki/United_States_v._Texas_(2016)"
+      "year": "2019",
+      "title": "OpenAI Creates a ‘Capped-Profit’ Arm",
+      "description": "OpenAI restructured into a hybrid in which a for-profit subsidiary could raise outside capital while reporting to the original nonprofit. Microsoft soon invested $1 billion, beginning a partnership that would reach into the tens of billions.",
+      "link": "https://en.wikipedia.org/wiki/OpenAI"
     },
     {
-      "year": "2017-2018",
-      "title": "Trump Administration Terminates Multiple TPS Designations",
-      "description": "The Trump administration announces termination of TPS for Haiti, El Salvador, Honduras, Nepal, Nicaragua, and Sudan, affecting over 300,000 people. Legal challenges immediately arise questioning whether the terminations were arbitrary, capricious, or motivated by discriminatory animus.",
-      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+      "year": "2023",
+      "title": "Altman Fired and Reinstated in Five Days",
+      "description": "OpenAI’s nonprofit board abruptly fired Sam Altman over a loss of confidence, then reversed itself within days under pressure from employees and Microsoft. The episode exposed how fragile the lab’s mission-driven governance had become.",
+      "link": "https://en.wikipedia.org/wiki/Sam_Altman"
     },
     {
-      "year": "2020",
-      "title": "DHS v. Regents Upholds DACA",
-      "description": "The Supreme Court rules 5-4 that the Trump administration's attempt to rescind DACA was 'arbitrary and capricious' under administrative law, though the Court acknowledges the executive likely has authority to end the program if done properly. The decision establishes that even discretionary programs require reasoned explanations for termination.",
-      "link": "https://en.wikipedia.org/wiki/Department_of_Homeland_Security_v._Regents_of_the_University_of_California"
+      "year": "2024",
+      "title": "Musk Sues OpenAI and Altman",
+      "description": "Musk filed suit alleging OpenAI had abandoned its founding nonprofit mission in pursuit of profit and Microsoft’s influence. The complaint reframed the company’s entire restructuring as a breach of the promises that drew its earliest funders and researchers.",
+      "link": "https://en.wikipedia.org/wiki/OpenAI"
     },
     {
-      "year": "2021",
-      "title": "Biden Restores TPS Designations",
-      "description": "President Biden reverses Trump-era terminations and expands TPS to additional countries including Venezuela and Afghanistan, covering over 600,000 people. The restoration demonstrates how executive immigration programs swing dramatically between administrations, raising concerns about stability and predictability.",
-      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
-    },
-    {
-      "year": "2024-2025",
-      "title": "Legal Challenges Reach Supreme Court",
-      "description": "Courts consider whether presidents have unfettered discretion to revoke deportation protections or whether such decisions require substantial justification and are subject to judicial review. The cases test the boundaries of executive power, administrative law, and the separation of powers in immigration policy.",
-      "link": "https://en.wikipedia.org/wiki/Temporary_protected_status"
+      "year": "2026",
+      "title": "Altman Takes the Stand",
+      "description": "With Altman under oath, Musk’s lawyers press him on whether the public, regulators, and former colleagues can still trust his account of how OpenAI’s mission was rewritten. The trial becomes the first major test of whether a nonprofit AI charter is a binding promise or a marketing document.",
+      "link": "https://en.wikipedia.org/wiki/OpenAI"
     }
   ],
   "patterns": [
     {
-      "title": "Executive Action Filling Congressional Gridlock",
-      "description": "When Congress fails to pass comprehensive immigration reform, presidents increasingly use executive authority to shape policy unilaterally. This pattern accelerated after 2001, with each administration pushing the boundaries of executive discretion further, creating legal uncertainty and political backlash."
+      "title": "Idealism dissolves under capital pressure",
+      "description": "Mission-driven labs and startups repeatedly soften their founding principles once scaling requires outside money. The same pattern appeared at Bell Labs, early biotech, and the first internet companies — and now at the leading AI labs."
     },
     {
-      "title": "Temporary Programs Becoming Quasi-Permanent",
-      "description": "Programs designed as temporary measures—from TPS to DACA—often extend for decades through repeated renewals, creating communities of people with ambiguous legal status. When termination is attempted, courts must weigh reliance interests against executive discretion, as seen in the DHS v. Regents case."
+      "title": "Co-founder splits reshape whole industries",
+      "description": "When the people who started a transformative company fall out, the resulting forks tend to define the field for a generation. The Edison–Tesla, Jobs–Sculley, and Gates–Allen breaks all set the terms for what came next."
     },
     {
-      "title": "Judicial Review of Executive Discretion",
-      "description": "Courts increasingly scrutinize whether executive immigration decisions are 'arbitrary and capricious,' even in areas traditionally granted wide discretion. This represents a gradual expansion of judicial oversight into previously unreviewable executive decisions, changing the balance of power."
+      "title": "Courts as the final referee of broken promises",
+      "description": "Tech disputes increasingly land in court once internal governance fails. Boards, charters, and side letters end up litigated in public, with judges asked to interpret promises that founders made before the technology was profitable."
     },
     {
-      "title": "Immigration as Partisan Political Weapon",
-      "description": "Since the 1990s, deportation protections have become intensely partisan, with each new administration reversing its predecessor's policies. This whiplash creates instability for millions of immigrants and demonstrates how executive programs without congressional authorization are vulnerable to political changes."
+      "title": "The trust question in transformative tech",
+      "description": "Each generation of powerful technology — railroads, broadcast, the internet, AI — eventually triggers a public reckoning over who can be trusted to steward it. The cross-examination of a lab’s CEO is the modern form of that older question."
     }
   ],
   "furtherReading": [
     {
-      "title": "Impossible Subjects: Illegal Aliens and the Making of Modern America",
-      "author": "Mae M. Ngai",
+      "title": "Genius Makers: The Mavericks Who Brought AI to Google, Facebook, and the World",
+      "author": "Cade Metz",
       "type": "book",
-      "link": "https://en.wikipedia.org/wiki/Mae_Ngai"
+      "link": "https://en.wikipedia.org/wiki/Cade_Metz"
     },
     {
-      "title": "A Nation of Immigrants",
-      "author": "John F. Kennedy",
+      "title": "The Idea Factory: Bell Labs and the Great Age of American Innovation",
+      "author": "Jon Gertner",
       "type": "book",
-      "link": "https://en.wikipedia.org/wiki/A_Nation_of_Immigrants"
+      "link": "https://en.wikipedia.org/wiki/Bell_Labs"
     },
     {
-      "title": "Deportation Nation: Outsiders in American History",
-      "author": "Daniel Kanstroom",
+      "title": "Hard Drive: Bill Gates and the Making of the Microsoft Empire",
+      "author": "James Wallace and Jim Erickson",
       "type": "book",
-      "link": "https://en.wikipedia.org/wiki/Deportation"
+      "link": "https://en.wikipedia.org/wiki/Bill_Gates"
     },
     {
-      "title": "The New York Times: The Long Legal Battle Over DACA",
-      "author": "Various NYT reporters",
-      "type": "article",
-      "link": "https://en.wikipedia.org/wiki/Deferred_Action_for_Childhood_Arrivals"
-    },
-    {
-      "title": "Immigration Nation",
-      "author": "Netflix Documentary Series",
+      "title": "The Social Network",
+      "author": "Aaron Sorkin / David Fincher",
       "type": "documentary",
-      "link": "https://en.wikipedia.org/wiki/Immigration_Nation"
+      "link": "https://en.wikipedia.org/wiki/The_Social_Network"
     }
   ],
-  "whyItMattersNow": "This case will determine whether future presidents can unilaterally dismantle deportation protections affecting millions, or whether administrative law requires substantial justification even for discretionary decisions. The pattern of executive immigration programs swinging wildly between administrations—with DACA, TPS, and other protections repeatedly created, terminated, and restored—has created constitutional crisis and human uncertainty. The Court's decision will either empower unilateral executive control over immigration or establish that even broad discretionary authority has judicially enforceable limits, fundamentally reshaping the separation of powers in immigration policy for decades to come."
+  "whyItMattersNow": "This trial will set precedent for whether nonprofit research labs can convert into commercial powerhouses without breaking the charters they used to attract early talent and capital. The deeper pattern — founders fighting over a transformative technology’s soul — has played out for more than a century, but the stakes are unusually high because AI is being built right now under the rules these proceedings will help define. Whether the court treats OpenAI’s mission as a binding promise or a marketing slogan will shape how the next decade of AI labs are funded, governed, and trusted."
 }
