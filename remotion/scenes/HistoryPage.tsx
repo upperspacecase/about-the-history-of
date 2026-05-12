@@ -10,6 +10,7 @@ import sampleHistory from "../data/sample-history.json";
 
 const SOURCE_LABEL = "NEW YORK TIMES";
 const BRAND = "The Long View";
+const ACCENT_GREEN = "#15803d"; // matches Tailwind green-700 used on the live page
 
 const CANVAS = { width: 1920, height: 1080 };
 const CONTENT_WIDTH = 1100;
@@ -18,9 +19,11 @@ const HEADER_HEIGHT = 88;
 // Phases (30 fps)
 const SHIMMER_END = 75; // 2.5s of generating shimmer
 const FADE_FRAMES = 18;
-const ARTICLE_START = SHIMMER_END;
-const SCROLL_START = ARTICLE_START + 30; // 1s pause to read first viewport
-const SCROLL_END = 540; // composition end
+const REWRITE_START = SHIMMER_END; // truth headline + significance fade in
+const REWRITE_DONE = REWRITE_START + FADE_FRAMES;
+const ARTICLE_START = REWRITE_DONE + 6; // small beat after the headline rewrite
+const SCROLL_START = ARTICLE_START + 36; // ~1.2s pause to read the headline+score
+const SCROLL_END = 600; // composition end
 
 export const HistoryPage = () => {
   const frame = useCurrentFrame();
@@ -47,6 +50,25 @@ export const HistoryPage = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
+  // Headline rewrite reveal — truthHeadline fades in above, original gets
+  // a strike-through line that grows left → right at the same time.
+  const rewriteProgress = interpolate(
+    frame,
+    [REWRITE_START, REWRITE_DONE],
+    [0, 1],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+  const truthLift = (1 - rewriteProgress) * 10;
+
+  // Significance dots cascade in just after the truth headline lands.
+  const SIG_START = REWRITE_DONE - 4;
+  const sigOpacity = interpolate(
+    frame,
+    [SIG_START, SIG_START + FADE_FRAMES],
+    [0, 1],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+
   const articleOpacity = interpolate(
     frame,
     [ARTICLE_START, ARTICLE_START + FADE_FRAMES],
@@ -64,7 +86,7 @@ export const HistoryPage = () => {
   // Estimated content height: header (88) + headline block (~260) + summary (~280)
   // + timeline (11 events × ~140 = 1540) + patterns (~440) + why (~220) + further reading (~580)
   // Total ≈ 3400. We need to scroll past the visible viewport (1080 - 88 = 992).
-  const SCROLL_DISTANCE = 2200;
+  const SCROLL_DISTANCE = 2400;
   const scrollProgress = interpolate(
     frame,
     [SCROLL_START, SCROLL_END],
@@ -152,7 +174,10 @@ export const HistoryPage = () => {
             transform: `translateY(${-scrollY}px)`,
           }}
         >
-          {/* Headline (always visible during shimmer + article) */}
+          {/* Headline (always visible during shimmer + article).
+              Starts as the original headline; after the shimmer, the
+              truth-headline fades in above and the original is struck
+              through, mirroring the live history page. */}
           <div
             style={{
               paddingBottom: 36,
@@ -173,18 +198,113 @@ export const HistoryPage = () => {
             >
               {SOURCE_LABEL}
             </div>
+
+            {/* Truth headline — fades in once the shimmer ends */}
             <h1
               style={{
                 fontFamily: theme.serif,
                 fontSize: 52,
                 fontWeight: 700,
                 lineHeight: 1.1,
-                margin: "12px 0 16px",
+                margin: "12px 0 14px",
                 letterSpacing: "-0.01em",
+                color: ACCENT_GREEN,
+                opacity: rewriteProgress,
+                transform: `translateY(${truthLift}px)`,
+                minHeight: rewriteProgress > 0 ? undefined : 0,
               }}
             >
-              {sampleHistory.headline}
+              {sampleHistory.truthHeadline}
             </h1>
+
+            {/* Original headline — gets struck through left-to-right as
+                the truth headline lands */}
+            <div
+              style={{
+                position: "relative",
+                display: "inline-block",
+                maxWidth: "100%",
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: theme.serif,
+                  fontSize: rewriteProgress > 0 ? 30 : 52,
+                  fontWeight: rewriteProgress > 0 ? 500 : 700,
+                  lineHeight: 1.15,
+                  margin: rewriteProgress > 0 ? "0 0 14px" : "12px 0 16px",
+                  color: rewriteProgress > 0 ? theme.muted : theme.foreground,
+                  transition: "none",
+                  letterSpacing: "-0.005em",
+                }}
+              >
+                {sampleHistory.headline}
+              </h2>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: "50%",
+                  height: 2,
+                  width: `${rewriteProgress * 100}%`,
+                  background: theme.muted,
+                  opacity: 0.7,
+                  transform: "translateY(-1px)",
+                }}
+              />
+            </div>
+
+            {/* Significance row — appears just after the truth headline */}
+            <div
+              style={{
+                marginTop: 18,
+                opacity: sigOpacity,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 12,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.18em",
+                    color: theme.muted,
+                  }}
+                >
+                  Historical significance
+                </span>
+                <SignificanceDots score={sampleHistory.significance} />
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontFamily: "ui-monospace, monospace",
+                    color: theme.muted,
+                  }}
+                >
+                  {sampleHistory.significance}/10
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: 16,
+                  color: theme.muted,
+                  lineHeight: 1.5,
+                  margin: 0,
+                  maxWidth: 820,
+                }}
+              >
+                {sampleHistory.significanceReason}
+              </p>
+            </div>
+
             <div
               style={{
                 fontSize: 15,
@@ -192,6 +312,7 @@ export const HistoryPage = () => {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
+                marginTop: 18,
               }}
             >
               Read original article ↗
@@ -215,7 +336,7 @@ export const HistoryPage = () => {
                   paddingTop: 24,
                 }}
               >
-                Researching the historical record…
+                <RotatingStage frame={frame} fps={fps} />
               </div>
             </div>
           )}
@@ -501,6 +622,37 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     {children}
   </div>
 );
+
+const SignificanceDots = ({ score }: { score: number }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+    {Array.from({ length: 10 }).map((_, i) => (
+      <span
+        key={i}
+        style={{
+          width: 12,
+          height: 12,
+          borderRadius: 999,
+          background: i < score ? theme.accent : theme.border,
+          display: "inline-block",
+        }}
+      />
+    ))}
+  </div>
+);
+
+const STAGES = [
+  "Searching the archive…",
+  "Tracing the timeline…",
+  "Identifying recurring patterns…",
+  "Scoring its place in history…",
+  "Writing the truth headline…",
+];
+
+const RotatingStage = ({ frame, fps }: { frame: number; fps: number }) => {
+  const dwell = Math.max(1, Math.round(fps * 0.6));
+  const idx = Math.min(STAGES.length - 1, Math.floor(frame / dwell));
+  return <span>{STAGES[idx]}</span>;
+};
 
 const Shimmer = () => {
   const frame = useCurrentFrame();
