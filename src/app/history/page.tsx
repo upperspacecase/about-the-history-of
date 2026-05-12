@@ -264,7 +264,7 @@ function HistoryContent() {
             </p>
             {generating && (
               <p className="text-xs text-muted/70 max-w-sm">
-                This usually takes 15–30 seconds. The result is saved so the
+                This usually takes 1–2 minutes. The result is saved so the
                 next reader sees it instantly.
               </p>
             )}
