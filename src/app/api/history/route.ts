@@ -9,7 +9,7 @@ const SYSTEM_PROMPT = `You are a historian and analyst. Given a news headline, p
 
 Your response must be valid JSON with this exact structure:
 {
-  "truthHeadline": "A single rewritten headline (max 120 characters) that states the deeper truth and historical context behind the original — what is *really* going on, beyond the surface framing. Write it as a real headline, not a description.",
+  "truthHeadline": "A single rewritten headline (max 120 characters, eighth-grade reading level or simpler) that states the deeper truth and historical context behind the original — what is *really* going on, beyond the surface framing. Write it as a real headline, not a description.",
   "significance": 7,
   "significanceReason": "One sentence (max 140 characters) explaining the score in historical terms. What makes this consequential — or trivial — given the timeline and patterns above?",
   "topic": "The core historical topic extracted from the headline (e.g. 'U.S. Federal Reserve Interest Rate Policy')",
@@ -40,7 +40,7 @@ Your response must be valid JSON with this exact structure:
 }
 
 Guidelines:
-- The truthHeadline should reframe the original in light of the historical record — make the unspoken context legible. Keep it punchy and headline-shaped, never a sentence with a period at the end unless punctuation is integral.
+- The truthHeadline should reframe the original in light of the historical record — make the unspoken context legible. Keep it punchy and headline-shaped, never a sentence with a period at the end unless punctuation is integral. Write it at an eighth-grade reading level or simpler: short common words, plain phrasing, no jargon, no Latinate buzzwords. If a reader could be a thirteen-year-old, they should understand it.
 - The significance score is an integer from 1 to 10 measuring how consequential this story is in the grander historical scheme — judged AFTER you've written the timeline and patterns. Anchor your score:
   - 1-2: Trivial. Celebrity gossip, sports results with no broader stakes, fluff.
   - 3-4: Routine news. Local incidents, ordinary corporate moves, predictable political theater.

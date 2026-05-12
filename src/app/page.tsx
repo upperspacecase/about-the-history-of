@@ -48,13 +48,45 @@ function todayFormatted() {
   });
 }
 
+function todayIso() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatLongDate(iso: string) {
+  try {
+    return new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function shiftIso(iso: string, days: number) {
+  const d = new Date(`${iso}T12:00:00`);
+  d.setDate(d.getDate() + days);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export default function Home() {
   const [headlines, setHeadlines] = useState<Headline[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category | "All">("All");
   const [activeSource, setActiveSource] = useState<string>("All");
-  const [showDemo, setShowDemo] = useState(false);
+  const today = useMemo(() => todayIso(), []);
+  const [selectedDate, setSelectedDate] = useState<string>(today);
+  const isArchive = selectedDate !== today;
   const [foundersRemaining, setFoundersRemaining] = useState<number | null>(
     null
   );
@@ -74,17 +106,35 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/headlines")
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setHeadlines([]);
+    setActiveCategory("All");
+    setActiveSource("All");
+
+    const url =
+      selectedDate === today
+        ? "/api/headlines"
+        : `/api/archive?date=${selectedDate}`;
+
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
+        if (cancelled) return;
         setHeadlines(data.headlines || []);
         setLoading(false);
       })
       .catch(() => {
+        if (cancelled) return;
         setError("Failed to load headlines");
         setLoading(false);
       });
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate, today]);
 
   const sources = useMemo(() => {
     const set = new Set<string>();
@@ -177,43 +227,24 @@ export default function Home() {
               className="text-4xl sm:text-5xl font-bold leading-[1.1] tracking-tight mb-4"
               style={{ fontFamily: "var(--font-serif)" }}
             >
-              If you&apos;re not a student of history, everything feels
-              unprecedented.
+              Headlines through a corrective lens
             </h2>
             <p className="text-lg text-muted leading-relaxed max-w-2xl">
               Pick any headline. Read the history that produced it — the
               timeline, the patterns, the precedent.
             </p>
 
-            <div className="mt-8">
-              <button
-                onClick={() => setShowDemo((s) => !s)}
-                aria-expanded={showDemo}
-                className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline cursor-pointer"
-              >
-                <span
-                  aria-hidden
-                  className={`inline-block transition-transform ${showDemo ? "rotate-90" : ""}`}
-                >
-                  &rsaquo;
-                </span>
-                {showDemo ? "Hide demo" : "Watch a 20-second demo"}
-              </button>
-
-              {showDemo && (
-                <div className="mt-4 rounded-lg overflow-hidden border border-border bg-card shadow-sm animate-fade-in">
-                  <video
-                    src="/demo.mp4"
-                    poster="/demo-poster.jpg"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="metadata"
-                    className="w-full h-auto block"
-                  />
-                </div>
-              )}
+            <div className="mt-8 rounded-lg overflow-hidden border border-border bg-card shadow-sm">
+              <video
+                src="/demo.mp4"
+                poster="/demo-poster.jpg"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="w-full h-auto block"
+              />
             </div>
 
             <button
@@ -317,9 +348,48 @@ export default function Home() {
 
       {/* Content */}
       <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full">
-        <h2 className="text-xs font-medium uppercase tracking-widest text-muted mb-6">
-          Today&apos;s Headlines
-        </h2>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-muted">
+            {isArchive
+              ? `Histories written on ${formatLongDate(selectedDate)}`
+              : "Today's Headlines"}
+          </h2>
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedDate((d) => shiftIso(d, -1))}
+              className="px-2 py-1 rounded border border-border text-muted hover:text-accent hover:border-accent/40 transition-colors cursor-pointer"
+              aria-label="Previous day"
+            >
+              &larr;
+            </button>
+            <input
+              type="date"
+              value={selectedDate}
+              max={today}
+              onChange={(e) => setSelectedDate(e.target.value || today)}
+              className="px-2 py-1 rounded border border-border bg-background text-foreground"
+            />
+            <button
+              type="button"
+              onClick={() => setSelectedDate((d) => shiftIso(d, 1))}
+              disabled={selectedDate >= today}
+              className="px-2 py-1 rounded border border-border text-muted hover:text-accent hover:border-accent/40 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted disabled:hover:border-border"
+              aria-label="Next day"
+            >
+              &rarr;
+            </button>
+            {isArchive && (
+              <button
+                type="button"
+                onClick={() => setSelectedDate(today)}
+                className="ml-1 px-2 py-1 rounded border border-accent text-accent hover:bg-accent/10 transition-colors cursor-pointer uppercase tracking-wider"
+              >
+                Today
+              </button>
+            )}
+          </div>
+        </div>
         {loading && (
           <div className="space-y-6 py-12">
             {[...Array(5)].map((_, i) => (
@@ -435,7 +505,19 @@ export default function Home() {
 
         {!loading && !error && headlines.length === 0 && (
           <div className="py-12 text-center text-muted">
-            <p>No headlines available right now.</p>
+            {isArchive ? (
+              <>
+                <p>No histories were written on {formatLongDate(selectedDate)}.</p>
+                <button
+                  onClick={() => setSelectedDate(today)}
+                  className="mt-3 text-accent underline text-sm"
+                >
+                  Back to today
+                </button>
+              </>
+            ) : (
+              <p>No headlines available right now.</p>
+            )}
           </div>
         )}
       </main>

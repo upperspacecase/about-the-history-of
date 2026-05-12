@@ -12,30 +12,30 @@ export const theme = {
 
 export const HEADLINES = [
   {
-    title: "Supreme Court to Hear Challenge Over Tariff Powers",
-    source: "BBC",
+    title: "Supreme Court Considers Trump’s Plan to Revoke Deportation Protections",
+    source: "New York Times",
     category: "Politics",
     snippet:
-      "Justices weigh whether executive branch can impose sweeping duties without Congressional approval, in case with far-reaching economic implications.",
-    date: "Apr 14, 9:24 AM",
+      "Justices weigh whether the executive branch can unilaterally end Temporary Protected Status, a question that tests the limits of presidential power over immigration.",
+    date: "May 12, 9:24 AM",
   },
   {
     title: "Cease-Fire Talks Stall in Eastern Europe",
     source: "NPR",
     category: "World",
-    date: "Apr 14, 8:51 AM",
+    date: "May 12, 8:51 AM",
   },
   {
     title: "AI Regulation Bill Advances in Senate",
     source: "Al Jazeera",
     category: "Technology",
-    date: "Apr 14, 7:40 AM",
+    date: "May 12, 7:40 AM",
   },
   {
     title: "Central Bank Signals Rate Hold Through Summer",
-    source: "BBC",
+    source: "BBC News",
     category: "Business",
-    date: "Apr 14, 6:12 AM",
+    date: "May 12, 6:12 AM",
   },
   {
     title: "Drought Threatens Wheat Harvest Across Three Continents",
@@ -51,7 +51,7 @@ export const HEADLINES = [
   },
   {
     title: "Coastal Cities Weigh Seawall Investments",
-    source: "BBC",
+    source: "BBC News",
     category: "Science",
     snippet: "Rising sea levels force infrastructure reckoning.",
   },
