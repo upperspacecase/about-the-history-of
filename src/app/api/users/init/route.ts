@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   const db = getAdminDb();
   const ref = db.collection("users").doc(uid);
-  const counterRef = db.collection("meta").doc("founders");
+  const normalizedEmail = email ? email.toLowerCase() : null;
 
   const created = await db.runTransaction(async (tx) => {
     const userSnap = await tx.get(ref);
@@ -31,15 +31,10 @@ export async function POST(request: Request) {
 
     tx.set(ref, {
       isPaying: false,
-      email: email ?? null,
+      email: normalizedEmail,
       name: name ?? null,
       createdAt: FieldValue.serverTimestamp(),
     });
-    tx.set(
-      counterRef,
-      { claimed: FieldValue.increment(1) },
-      { merge: true }
-    );
     return true;
   });
 

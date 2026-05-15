@@ -1,11 +1,20 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignificanceDots } from "@/components/significance-dots";
+import { PaymentPopup } from "@/components/payment-popup";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CATEGORIES, type Category } from "@/lib/categories";
+
+const FREE_HEADLINE_LIMIT = 5;
+
+interface UserStatus {
+  isPaying: boolean;
+  freeYearActive: boolean;
+  freeYearExpiresAt: number | null;
+}
 
 interface Headline {
   title: string;
@@ -90,9 +99,11 @@ export default function Home() {
   const [foundersRemaining, setFoundersRemaining] = useState<number | null>(
     null
   );
-  const { user, signIn, signOut } = useAuth();
+  const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
+  const [popupDismissed, setPopupDismissed] = useState(false);
+  const { user, signIn, signOut, getIdToken } = useAuth();
 
-  useEffect(() => {
+  const refreshFounders = useCallback(() => {
     fetch("/api/founders")
       .then((res) => res.json())
       .then((data) => {
@@ -104,6 +115,60 @@ export default function Home() {
         /* leave null — banner falls back to generic copy */
       });
   }, []);
+
+  useEffect(() => {
+    refreshFounders();
+  }, [refreshFounders]);
+
+  // Fetch payment status whenever the signed-in user changes.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user) {
+        if (!cancelled) {
+          setUserStatus(null);
+          setPopupDismissed(false);
+        }
+        return;
+      }
+      const token = await getIdToken();
+      if (!token || cancelled) return;
+      if (!cancelled) setPopupDismissed(false);
+      try {
+        const res = await fetch("/api/users/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as UserStatus;
+        if (!cancelled) setUserStatus(data);
+      } catch {
+        /* leave status null — popup just won't show */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, getIdToken]);
+
+  const refreshUserStatus = useCallback(async () => {
+    if (!user) return;
+    const token = await getIdToken();
+    if (!token) return;
+    try {
+      const res = await fetch("/api/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      setUserStatus((await res.json()) as UserStatus);
+    } catch {
+      /* ignore */
+    }
+  }, [user, getIdToken]);
+
+  const hasFullAccess =
+    !!userStatus && (userStatus.isPaying || userStatus.freeYearActive);
+  const isFreeTier = !!user && !!userStatus && !hasFullAccess;
+  const showPaywall = isFreeTier && !popupDismissed;
 
   useEffect(() => {
     let cancelled = false;
@@ -152,9 +217,11 @@ export default function Home() {
     [headlines, activeCategory, activeSource]
   );
 
-  const lead = filtered[0];
-  const secondary = filtered.slice(1, 4);
-  const rest = filtered.slice(4);
+  const visible = useMemo(
+    () => (isFreeTier ? filtered.slice(0, FREE_HEADLINE_LIMIT) : filtered),
+    [filtered, isFreeTier]
+  );
+  const hiddenCount = filtered.length - visible.length;
 
   const handleGetStarted = () => {
     document
@@ -439,7 +506,7 @@ export default function Home() {
 
         {!loading && !error && filtered.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-            {filtered.map((h, i) => (
+            {visible.map((h, i) => (
               <Link
                 key={i}
                 href={`/history?headline=${toSlug(h.title)}&source=${encodeURIComponent(h.source)}&link=${encodeURIComponent(h.link)}`}
@@ -503,6 +570,22 @@ export default function Home() {
           </div>
         )}
 
+        {!loading && !error && isFreeTier && hiddenCount > 0 && (
+          <div className="mt-8 border border-dashed border-border rounded-lg p-6 text-center bg-card">
+            <p className="text-sm text-muted mb-3">
+              <strong className="text-foreground">{hiddenCount} more</strong>{" "}
+              headlines available with a subscription or free-year invite.
+            </p>
+            <button
+              type="button"
+              onClick={() => setPopupDismissed(false)}
+              className="text-sm font-semibold text-accent hover:underline cursor-pointer"
+            >
+              See plans &rarr;
+            </button>
+          </div>
+        )}
+
         {!loading && !error && headlines.length === 0 && (
           <div className="py-12 text-center text-muted">
             {isArchive ? (
@@ -521,6 +604,18 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {showPaywall && (
+        <PaymentPopup
+          foundersRemaining={foundersRemaining}
+          onContinueFree={() => setPopupDismissed(true)}
+          onClaimed={async () => {
+            await refreshUserStatus();
+            refreshFounders();
+            setPopupDismissed(true);
+          }}
+        />
+      )}
 
       {/* Footer */}
       <footer className="border-t border-border mt-auto">
