@@ -230,9 +230,11 @@ export default function Home() {
     [headlines, activeCategory, activeSource]
   );
 
+  // Signed-in users always see all headlines. Logged-out users are gated by
+  // the paywall popup, which sits above the page.
   const visible = useMemo(
-    () => (isFreeTier ? filtered.slice(0, FREE_HEADLINE_LIMIT) : filtered),
-    [filtered, isFreeTier]
+    () => (user ? filtered : filtered.slice(0, FREE_HEADLINE_LIMIT)),
+    [filtered, user]
   );
   const hiddenCount = filtered.length - visible.length;
 
@@ -463,11 +465,10 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && !error && isFreeTier && hiddenCount > 0 && (
+        {!loading && !error && isFreeTier && (
           <div className="mt-8 border border-dashed border-border rounded-lg p-6 text-center bg-card">
             <p className="text-sm text-muted mb-3">
-              <strong className="text-foreground">{hiddenCount} more</strong>{" "}
-              headlines available with a subscription or free-year invite.
+              Subscribe or claim a free-year invite to support The Long View.
             </p>
             <button
               type="button"
