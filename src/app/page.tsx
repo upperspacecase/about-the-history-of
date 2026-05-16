@@ -5,8 +5,6 @@ import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignificanceDots } from "@/components/significance-dots";
 import { PaymentPopup } from "@/components/payment-popup";
-import { LandingHero } from "@/components/landing-hero";
-import { LandingBanner } from "@/components/landing-banner";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CATEGORIES, type Category } from "@/lib/categories";
 
@@ -181,7 +179,9 @@ export default function Home() {
   const hasFullAccess =
     !!userStatus && (userStatus.isPaying || userStatus.freeYearActive);
   const isFreeTier = !!user && !!userStatus && !hasFullAccess;
-  const showPaywall = isFreeTier && !popupDismissed;
+  // Logged-out: paywall always shows (no dismissal — preview link navigates away).
+  // Signed-in free tier: paywall shows once on first sign-in (auth-context sets the flag).
+  const showPaywall = !user || (isFreeTier && !popupDismissed);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,12 +236,6 @@ export default function Home() {
   );
   const hiddenCount = filtered.length - visible.length;
 
-  const handleGetStarted = () => {
-    document
-      .getElementById("headlines")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   return (
     <div className="flex flex-col flex-1">
       {/* Masthead */}
@@ -266,92 +260,6 @@ export default function Home() {
           </div>
         </div>
       </header>
-
-      {!user && <LandingHero dateLabel={todayFormatted()} />}
-
-      {/* Hero + value props (signed in) */}
-      {user && (
-      <section className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-10">
-          <div className="lg:col-span-2">
-            <h2
-              className="text-4xl sm:text-5xl font-bold leading-[1.1] tracking-tight mb-4"
-              style={{ fontFamily: "var(--font-serif)" }}
-            >
-              Headlines through a corrective lens
-            </h2>
-            <p className="text-lg text-muted leading-relaxed max-w-2xl">
-              Pick any headline. Read the history that produced it — the
-              timeline, the patterns, the precedent.
-            </p>
-
-            <div className="mt-8 rounded-lg overflow-hidden border border-border bg-card shadow-sm">
-              <video
-                src="/demo.mp4"
-                poster="/demo-poster.jpg"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                className="w-full h-auto block"
-              />
-            </div>
-
-            <button
-              onClick={handleGetStarted}
-              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
-            >
-              Read today&apos;s history
-              <span aria-hidden>&darr;</span>
-            </button>
-          </div>
-
-          <aside className="lg:border-l lg:border-border lg:pl-10">
-            <h3 className="text-xs font-medium uppercase tracking-widest text-muted mb-5">
-              Why be a student of history?
-            </h3>
-            <ul className="space-y-5">
-              <li>
-                <p
-                  className="text-base font-semibold mb-1"
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  History doesn&apos;t repeat but it does rhyme.
-                </p>
-                <p className="text-sm text-muted leading-relaxed">
-                  Every crisis has a precedent. The precedent usually hints at
-                  how this one ends.
-                </p>
-              </li>
-              <li>
-                <p
-                  className="text-base font-semibold mb-1"
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  Remember, there is no finish line.
-                </p>
-                <p className="text-sm text-muted leading-relaxed">
-                  Every era thinks it&apos;s the last act. None has been.
-                </p>
-              </li>
-              <li>
-                <p
-                  className="text-base font-semibold mb-1"
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  Find signal in the noise.
-                </p>
-                <p className="text-sm text-muted leading-relaxed">
-                  Headlines describe. History explains.
-                </p>
-              </li>
-            </ul>
-
-          </aside>
-        </div>
-      </section>
-      )}
 
       {/* Filters (above headlines) */}
       <div id="headlines" className="border-b border-border bg-background/60 sticky top-0 z-10 backdrop-blur">
@@ -590,12 +498,10 @@ export default function Home() {
         )}
       </main>
 
-      {!user && <LandingBanner />}
-
       {showPaywall && (
         <PaymentPopup
           foundersRemaining={foundersRemaining}
-          onContinueFree={() => setPopupDismissed(true)}
+          dateLabel={todayFormatted()}
           onClaimed={async () => {
             await refreshUserStatus();
             refreshFounders();
