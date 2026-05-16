@@ -119,8 +119,8 @@ export function LandingHero({ dateLabel }: LandingHeroProps) {
           <Image
             src="/hero-story.png"
             alt="An example Long View story: a major headline alongside its historical timeline, key moments, and why-it-matters context."
-            width={1086}
-            height={1448}
+            width={962}
+            height={1414}
             priority
             className="w-full h-auto"
           />
