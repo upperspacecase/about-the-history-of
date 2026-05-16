@@ -59,7 +59,7 @@ function GoogleLogo() {
 }
 
 export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
-  const { user, signIn, getIdToken } = useAuth();
+  const { user, signIn, signOut, getIdToken } = useAuth();
   const [plan, setPlan] = useState<Plan>("yearly");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [signInLoading, setSignInLoading] = useState(false);
@@ -119,6 +119,25 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
     setSignInLoading(true);
     try {
       await signIn();
+      const token = await getIdToken();
+      if (!token) {
+        setError("Sign-in failed. Try again.");
+        return;
+      }
+      const res = await fetch("/api/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        isPaying?: boolean;
+      };
+      if (!data.isPaying) {
+        await signOut();
+        setError(
+          "Sign-in is only for active subscribers. Subscribe to access The Long View."
+        );
+        return;
+      }
+      // success — page useEffect picks up the paying status and hides the popup
     } catch {
       setError("Sign-in was cancelled or failed.");
     } finally {
