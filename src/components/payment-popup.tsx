@@ -237,6 +237,13 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
                 {checkoutLoading ? "Opening Stripe…" : "Subscribe with Stripe"}
               </button>
               <p className="mt-2 text-xs text-muted">Cancel anytime.</p>
+
+              <Link
+                href="/preview"
+                className="mt-4 block text-center text-sm font-medium border border-border text-foreground py-2 rounded hover:border-accent hover:text-accent transition-colors"
+              >
+                Preview free
+              </Link>
             </section>
 
             {/* Sign in */}
@@ -268,13 +275,6 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
                 {error}
               </p>
             )}
-
-            <Link
-              href="/preview"
-              className="block text-center text-sm font-medium border border-border text-foreground py-2 rounded hover:border-accent hover:text-accent transition-colors"
-            >
-              Read up to 3 already re-written stories
-            </Link>
           </div>
         </div>
 
