@@ -7,6 +7,24 @@ interface LandingHeroProps {
   dateLabel: string;
 }
 
+const PRINCIPLES = [
+  {
+    n: "1",
+    title: "History doesn’t repeat but it does rhyme.",
+    body: "Every crisis has a precedent. The precedent usually hints at how this one ends.",
+  },
+  {
+    n: "2",
+    title: "Remember, there is no finish line.",
+    body: "Every era thinks it’s the last act. None has been.",
+  },
+  {
+    n: "3",
+    title: "Find signal in the noise.",
+    body: "Headlines describe. History explains.",
+  },
+];
+
 function GoogleLogo() {
   return (
     <svg
@@ -70,14 +88,39 @@ export function LandingHero({ dateLabel }: LandingHeroProps) {
               Sign in with Google
             </button>
           </div>
+
+          <ol className="mt-10 space-y-6">
+            {PRINCIPLES.map((p) => (
+              <li key={p.n} className="flex items-start gap-4">
+                <span
+                  aria-hidden
+                  className="shrink-0 w-10 h-10 rounded bg-highlight border border-border flex items-center justify-center text-lg font-semibold"
+                  style={{ fontFamily: "var(--font-serif)" }}
+                >
+                  {p.n}
+                </span>
+                <div>
+                  <h3
+                    className="text-base font-semibold mb-1"
+                    style={{ fontFamily: "var(--font-serif)" }}
+                  >
+                    {p.title}
+                  </h3>
+                  <p className="text-sm text-muted leading-relaxed">
+                    {p.body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
 
         <div className="relative">
           <Image
             src="/hero-story.png"
             alt="An example Long View story: a major headline alongside its historical timeline, key moments, and why-it-matters context."
-            width={849}
-            height={1433}
+            width={1086}
+            height={1448}
             priority
             className="w-full h-auto"
           />

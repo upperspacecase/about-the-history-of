@@ -6,7 +6,6 @@ import { SignInButton } from "@/components/sign-in-button";
 import { SignificanceDots } from "@/components/significance-dots";
 import { PaymentPopup } from "@/components/payment-popup";
 import { LandingHero } from "@/components/landing-hero";
-import { HowItWorks } from "@/components/how-it-works";
 import { LandingBanner } from "@/components/landing-banner";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CATEGORIES, type Category } from "@/lib/categories";
@@ -268,12 +267,7 @@ export default function Home() {
         </div>
       </header>
 
-      {!user && (
-        <>
-          <LandingHero dateLabel={todayFormatted()} />
-          <HowItWorks />
-        </>
-      )}
+      {!user && <LandingHero dateLabel={todayFormatted()} />}
 
       {/* Hero + value props (signed in) */}
       {user && (
