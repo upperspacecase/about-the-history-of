@@ -20,6 +20,7 @@ export function PaymentPopup({
   const [plan, setPlan] = useState<Plan>("yearly");
   const [inviterEmail, setInviterEmail] = useState("");
   const [claiming, setClaiming] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState("");
 
   const slotsLeft =
@@ -28,11 +29,38 @@ export function PaymentPopup({
   const price = plan === "yearly" ? "£34" : "£5";
   const period = plan === "yearly" ? "/yr" : "/mo";
 
-  function handleCheckout() {
-    // Stripe checkout will be wired here.
-    window.alert(
-      `Stripe checkout for the ${plan} plan will be connected soon.`
-    );
+  async function handleCheckout() {
+    if (checkoutLoading) return;
+    setError("");
+    setCheckoutLoading(true);
+    try {
+      const token = await getIdToken();
+      if (!token) {
+        setError("Please sign in again.");
+        return;
+      }
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.url) {
+        setError(data.error ?? "Could not start checkout");
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError("Network error. Try again.");
+    } finally {
+      setCheckoutLoading(false);
+    }
   }
 
   async function handleClaim(e: FormEvent) {
@@ -127,9 +155,10 @@ export function PaymentPopup({
             <button
               type="button"
               onClick={handleCheckout}
-              className="w-full bg-accent text-white font-semibold py-2.5 rounded hover:opacity-90 transition-opacity cursor-pointer"
+              disabled={checkoutLoading}
+              className="w-full bg-accent text-white font-semibold py-2.5 rounded hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Subscribe with Stripe
+              {checkoutLoading ? "Opening Stripe…" : "Subscribe with Stripe"}
             </button>
 
             <div className="flex items-center gap-3 my-5 text-[11px] uppercase tracking-widest text-muted">
