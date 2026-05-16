@@ -5,6 +5,9 @@ import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignificanceDots } from "@/components/significance-dots";
 import { PaymentPopup } from "@/components/payment-popup";
+import { LandingHero } from "@/components/landing-hero";
+import { HowItWorks } from "@/components/how-it-works";
+import { LandingBanner } from "@/components/landing-banner";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CATEGORIES, type Category } from "@/lib/categories";
 
@@ -101,7 +104,7 @@ export default function Home() {
   );
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   const [popupDismissed, setPopupDismissed] = useState(false);
-  const { user, signIn, signOut, getIdToken } = useAuth();
+  const { user, signOut, getIdToken } = useAuth();
 
   const refreshFounders = useCallback(() => {
     fetch("/api/founders")
@@ -127,13 +130,24 @@ export default function Home() {
       if (!user) {
         if (!cancelled) {
           setUserStatus(null);
-          setPopupDismissed(false);
+          setPopupDismissed(true);
         }
         return;
       }
       const token = await getIdToken();
       if (!token || cancelled) return;
-      if (!cancelled) setPopupDismissed(false);
+
+      // Paywall auto-opens only on the user's first ever sign-in. signIn()
+      // sets this flag when Firebase Auth reports creationTime == lastSignInTime.
+      let firstSignIn = false;
+      try {
+        firstSignIn = window.localStorage.getItem("lv_first_signin") === "1";
+        if (firstSignIn) window.localStorage.removeItem("lv_first_signin");
+      } catch {
+        /* storage disabled — keep popup dismissed */
+      }
+      if (!cancelled) setPopupDismissed(!firstSignIn);
+
       try {
         const res = await fetch("/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
@@ -231,38 +245,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1">
-      {/* Announcement banner — hidden when signed in */}
-      {!user && (
-        <div className="bg-accent text-white">
-          <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-            {foundersRemaining === null || foundersRemaining > 0 ? (
-              <span className="font-medium">
-                Free for a year — share with 2 friends.
-                {foundersRemaining !== null && (
-                  <>
-                    {" "}
-                    <strong>
-                      {foundersRemaining} of 250 founder spots left.
-                    </strong>
-                  </>
-                )}
-              </span>
-            ) : (
-              <span className="font-medium">
-                Founder spots are full. Sign up anyway — there&apos;s more to
-                come.
-              </span>
-            )}
-            <button
-              onClick={() => signIn()}
-              className="px-3 py-1 rounded-full bg-white text-accent text-xs font-semibold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer"
-            >
-              Get Started
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Masthead */}
       <header className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 pt-6 pb-4 relative">
@@ -286,7 +268,18 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero + value props */}
+      {!user && (
+        <>
+          <LandingHero
+            dateLabel={todayFormatted()}
+            onReadFreeIssue={handleGetStarted}
+          />
+          <HowItWorks />
+        </>
+      )}
+
+      {/* Hero + value props (signed in) */}
+      {user && (
       <section className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2">
@@ -367,6 +360,7 @@ export default function Home() {
           </aside>
         </div>
       </section>
+      )}
 
       {/* Filters (above headlines) */}
       <div id="headlines" className="border-b border-border bg-background/60 sticky top-0 z-10 backdrop-blur">
@@ -604,6 +598,8 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {!user && <LandingBanner />}
 
       {showPaywall && (
         <PaymentPopup

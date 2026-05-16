@@ -45,6 +45,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signIn: async () => {
         const result = await signInWithPopup(getClientAuth(), googleProvider);
+        const created = result.user.metadata.creationTime;
+        const last = result.user.metadata.lastSignInTime;
+        if (created && last) {
+          const diff = Math.abs(
+            new Date(created).getTime() - new Date(last).getTime()
+          );
+          if (diff < 5000) {
+            try {
+              window.localStorage.setItem("lv_first_signin", "1");
+            } catch {
+              /* storage disabled — popup just won't show this session */
+            }
+          }
+        }
         const idToken = await result.user.getIdToken();
         // Fire-and-forget: creates Firestore user doc + sends welcome email on first sign-in
         fetch("/api/users/init", {
