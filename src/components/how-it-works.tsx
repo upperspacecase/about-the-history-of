@@ -1,18 +1,18 @@
 const STEPS = [
   {
     n: "1",
-    title: "We pick the headline",
-    body: "Each day, we choose one major story shaping our world.",
+    title: "History doesn’t repeat but it does rhyme.",
+    body: "Every crisis has a precedent. The precedent usually hints at how this one ends.",
   },
   {
     n: "2",
-    title: "We trace the history",
-    body: "We build a timeline of the key events, decisions, and turning points.",
+    title: "Remember, there is no finish line.",
+    body: "Every era thinks it’s the last act. None has been.",
   },
   {
     n: "3",
-    title: "We give you the long view",
-    body: "You get the context, the pattern, and what usually happens next.",
+    title: "Find signal in the noise.",
+    body: "Headlines describe. History explains.",
   },
 ];
 
@@ -20,9 +20,6 @@ export function HowItWorks() {
   return (
     <section className="border-y border-border bg-card/40">
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <p className="text-xs font-medium uppercase tracking-widest text-muted text-center mb-8">
-          How it works
-        </p>
         <ol className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {STEPS.map((step) => (
             <li key={step.n} className="flex items-start gap-4">

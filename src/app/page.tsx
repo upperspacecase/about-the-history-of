@@ -270,10 +270,7 @@ export default function Home() {
 
       {!user && (
         <>
-          <LandingHero
-            dateLabel={todayFormatted()}
-            onReadFreeIssue={handleGetStarted}
-          />
+          <LandingHero dateLabel={todayFormatted()} />
           <HowItWorks />
         </>
       )}

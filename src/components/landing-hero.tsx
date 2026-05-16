@@ -5,70 +5,38 @@ import { useAuth } from "@/lib/firebase/auth-context";
 
 interface LandingHeroProps {
   dateLabel: string;
-  onReadFreeIssue: () => void;
 }
 
-function ClockIcon() {
+function GoogleLogo() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      aria-hidden
+      className="shrink-0"
+    >
       <path
-        d="M12 7v5l3 2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M17.64 9.2045c0-.6381-.0573-1.2518-.1636-1.8409H9v3.4814h4.8436c-.2086 1.125-.8427 2.0782-1.7959 2.7164v2.2581h2.9087c1.7018-1.5668 2.6836-3.8741 2.6836-6.615z"
+        fill="#4285F4"
+      />
+      <path
+        d="M9 18c2.43 0 4.4673-.8059 5.9564-2.1805l-2.9087-2.2581c-.8059.54-1.8368.8595-3.0477.8595-2.3441 0-4.3286-1.5832-5.0364-3.7104H.9573v2.3318C2.4382 15.9832 5.4818 18 9 18z"
+        fill="#34A853"
+      />
+      <path
+        d="M3.9636 10.71c-.18-.54-.2823-1.1168-.2823-1.71s.1023-1.17.2823-1.71V4.9582H.9573C.3477 6.1732 0 7.5477 0 9s.3477 2.8268.9573 4.0418L3.9636 10.71z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M9 3.5795c1.3214 0 2.5077.4541 3.4405 1.346l2.5813-2.5814C13.4632.8918 11.4259 0 9 0 5.4818 0 2.4382 2.0168.9573 4.9582L3.9636 7.29C4.6714 5.1627 6.6559 3.5795 9 3.5795z"
+        fill="#EA4335"
       />
     </svg>
   );
 }
 
-function TimelineIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M3 18 L9 12 L13 15 L21 6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="9" cy="12" r="1.5" fill="currentColor" />
-      <circle cx="13" cy="15" r="1.5" fill="currentColor" />
-      <circle cx="21" cy="6" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect
-        x="3.5"
-        y="5.5"
-        width="17"
-        height="15"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M8 3v4M16 3v4M3.5 10h17"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-const BULLETS = [
-  { icon: ClockIcon, label: "One headline." },
-  { icon: TimelineIcon, label: "One historical timeline." },
-  { icon: CalendarIcon, label: "Every day." },
-];
-
-export function LandingHero({ dateLabel, onReadFreeIssue }: LandingHeroProps) {
+export function LandingHero({ dateLabel }: LandingHeroProps) {
   const { signIn } = useAuth();
 
   return (
@@ -82,7 +50,7 @@ export function LandingHero({ dateLabel, onReadFreeIssue }: LandingHeroProps) {
             className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight"
             style={{ fontFamily: "var(--font-serif)" }}
           >
-            Today&apos;s news makes more sense when you know what came before.
+            Today&apos;s Headlines, in Context
           </h2>
           <div className="mt-6 w-16 h-px bg-accent/60" aria-hidden />
           <p className="mt-6 text-lg text-muted leading-relaxed max-w-xl">
@@ -90,43 +58,28 @@ export function LandingHero({ dateLabel, onReadFreeIssue }: LandingHeroProps) {
             — the precedent, the pattern, and the story beneath the story.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-8">
             <button
               type="button"
               onClick={() => signIn()}
-              className="bg-foreground text-background font-semibold px-5 py-3 rounded hover:opacity-90 transition-opacity cursor-pointer"
+              className="inline-flex items-center gap-3 bg-foreground text-background font-semibold px-5 py-3 rounded hover:opacity-90 transition-opacity cursor-pointer"
             >
-              Start reading — £5/month
-            </button>
-            <button
-              type="button"
-              onClick={onReadFreeIssue}
-              className="border border-border text-foreground font-medium px-5 py-3 rounded hover:border-accent hover:text-accent transition-colors cursor-pointer"
-            >
-              Read a free issue
+              <span className="bg-white rounded p-1 flex items-center justify-center">
+                <GoogleLogo />
+              </span>
+              Sign in with Google
             </button>
           </div>
-
-          <ul className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted">
-            {BULLETS.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2">
-                <span className="text-accent">
-                  <Icon />
-                </span>
-                <span>{label}</span>
-              </li>
-            ))}
-          </ul>
         </div>
 
         <div className="relative">
           <Image
             src="/hero-story.png"
             alt="An example Long View story: a major headline alongside its historical timeline, key moments, and why-it-matters context."
-            width={1098}
+            width={849}
             height={1433}
             priority
-            className="w-full h-auto rounded-lg border border-border shadow-sm bg-card"
+            className="w-full h-auto"
           />
         </div>
       </div>
