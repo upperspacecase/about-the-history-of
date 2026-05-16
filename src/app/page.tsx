@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignificanceDots } from "@/components/significance-dots";
@@ -12,8 +12,6 @@ const FREE_HEADLINE_LIMIT = 5;
 
 interface UserStatus {
   isPaying: boolean;
-  freeYearActive: boolean;
-  freeYearExpiresAt: number | null;
 }
 
 interface Headline {
@@ -96,29 +94,9 @@ export default function Home() {
   const today = useMemo(() => todayIso(), []);
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const isArchive = selectedDate !== today;
-  const [foundersRemaining, setFoundersRemaining] = useState<number | null>(
-    null
-  );
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   const [popupDismissed, setPopupDismissed] = useState(false);
   const { user, signOut, getIdToken } = useAuth();
-
-  const refreshFounders = useCallback(() => {
-    fetch("/api/founders")
-      .then((res) => res.json())
-      .then((data) => {
-        if (typeof data.remaining === "number") {
-          setFoundersRemaining(data.remaining);
-        }
-      })
-      .catch(() => {
-        /* leave null — banner falls back to generic copy */
-      });
-  }, []);
-
-  useEffect(() => {
-    refreshFounders();
-  }, [refreshFounders]);
 
   // Fetch payment status whenever the signed-in user changes.
   useEffect(() => {
@@ -161,24 +139,7 @@ export default function Home() {
     };
   }, [user, getIdToken]);
 
-  const refreshUserStatus = useCallback(async () => {
-    if (!user) return;
-    const token = await getIdToken();
-    if (!token) return;
-    try {
-      const res = await fetch("/api/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      setUserStatus((await res.json()) as UserStatus);
-    } catch {
-      /* ignore */
-    }
-  }, [user, getIdToken]);
-
-  const hasFullAccess =
-    !!userStatus && (userStatus.isPaying || userStatus.freeYearActive);
-  const isFreeTier = !!user && !!userStatus && !hasFullAccess;
+  const isFreeTier = !!user && !!userStatus && !userStatus.isPaying;
   // Logged-out: paywall always shows (no dismissal — preview link navigates away).
   // Signed-in free tier: paywall shows once on first sign-in (auth-context sets the flag).
   const showPaywall = !user || (isFreeTier && !popupDismissed);
@@ -432,17 +393,17 @@ export default function Home() {
                 {h.truthHeadline ? (
                   <div className="mt-1 space-y-1">
                     <h3
+                      className="text-base font-semibold leading-snug line-through text-muted decoration-muted/60"
+                      style={{ fontFamily: "var(--font-serif)" }}
+                    >
+                      {h.title}
+                    </h3>
+                    <h3
                       className="text-base font-semibold leading-snug text-green-700 dark:text-green-500"
                       style={{ fontFamily: "var(--font-serif)" }}
                     >
                       {h.truthHeadline}
                     </h3>
-                    <p
-                      className="text-sm leading-snug line-through text-muted decoration-muted/60"
-                      style={{ fontFamily: "var(--font-serif)" }}
-                    >
-                      {h.title}
-                    </p>
                   </div>
                 ) : (
                   <h3
@@ -499,17 +460,7 @@ export default function Home() {
         )}
       </main>
 
-      {showPaywall && (
-        <PaymentPopup
-          foundersRemaining={foundersRemaining}
-          dateLabel={todayFormatted()}
-          onClaimed={async () => {
-            await refreshUserStatus();
-            refreshFounders();
-            setPopupDismissed(true);
-          }}
-        />
-      )}
+      {showPaywall && <PaymentPopup dateLabel={todayFormatted()} />}
 
       {/* Footer */}
       <footer className="border-t border-border mt-auto">

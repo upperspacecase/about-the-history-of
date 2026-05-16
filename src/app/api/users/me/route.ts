@@ -1,4 +1,3 @@
-import type { Timestamp } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
@@ -20,13 +19,8 @@ export async function GET(request: Request) {
 
   const snap = await getAdminDb().collection("users").doc(uid).get();
   const data = snap.data();
-  const expires = data?.freeYearExpiresAt as Timestamp | undefined;
-  const expiresMs = expires?.toMillis() ?? null;
-  const freeYearActive = expiresMs !== null && expiresMs > Date.now();
 
   return Response.json({
     isPaying: data?.isPaying === true,
-    freeYearActive,
-    freeYearExpiresAt: expiresMs,
   });
 }

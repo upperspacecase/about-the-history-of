@@ -194,17 +194,17 @@ export default function PreviewPage() {
                 {h.truthHeadline ? (
                   <div className="mt-1 space-y-1">
                     <h3
+                      className="text-base font-semibold leading-snug line-through text-muted decoration-muted/60"
+                      style={{ fontFamily: "var(--font-serif)" }}
+                    >
+                      {h.title}
+                    </h3>
+                    <h3
                       className="text-base font-semibold leading-snug text-green-700 dark:text-green-500"
                       style={{ fontFamily: "var(--font-serif)" }}
                     >
                       {h.truthHeadline}
                     </h3>
-                    <p
-                      className="text-sm leading-snug line-through text-muted decoration-muted/60"
-                      style={{ fontFamily: "var(--font-serif)" }}
-                    >
-                      {h.title}
-                    </p>
                   </div>
                 ) : (
                   <h3
