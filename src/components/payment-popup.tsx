@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { ExampleStory } from "./example-story";
@@ -13,17 +14,17 @@ type Plan = "yearly" | "monthly";
 
 const PRINCIPLES = [
   {
-    n: "1",
+    icon: "/icons/history-rhyme.png",
     title: "History doesn’t repeat but it does rhyme.",
     body: "Every crisis has a precedent. The precedent usually hints at how this one ends.",
   },
   {
-    n: "2",
+    icon: "/icons/no-finish-line.png",
     title: "Remember, there is no finish line.",
     body: "Every era thinks it’s the last act. None has been.",
   },
   {
-    n: "3",
+    icon: "/icons/signal-noise.png",
     title: "Find signal in the noise.",
     body: "Headlines describe. History explains.",
   },
@@ -175,14 +176,15 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
 
             <ol className="mt-6 space-y-4">
               {PRINCIPLES.map((p) => (
-                <li key={p.n} className="flex items-start gap-3">
-                  <span
+                <li key={p.icon} className="flex items-start gap-3">
+                  <Image
+                    src={p.icon}
+                    alt=""
                     aria-hidden
-                    className="shrink-0 w-8 h-8 rounded bg-highlight border border-border flex items-center justify-center text-base font-semibold"
-                    style={{ fontFamily: "var(--font-serif)" }}
-                  >
-                    {p.n}
-                  </span>
+                    width={48}
+                    height={48}
+                    className="shrink-0 w-12 h-12"
+                  />
                   <div>
                     <h3
                       className="text-sm font-semibold mb-0.5"
