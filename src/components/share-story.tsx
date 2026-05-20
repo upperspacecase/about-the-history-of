@@ -18,10 +18,10 @@ const SCALE = PREVIEW_WIDTH / SHARE_CARD_WIDTH;
 interface Props {
   data: HistoryResponse;
   headline: string;
-  source?: string;
+  sourceUrl?: string;
 }
 
-export function ShareStory({ data, headline, source }: Props) {
+export function ShareStory({ data, headline, sourceUrl }: Props) {
   const cardRefs = useRef<Record<ShareCardVariant, HTMLDivElement | null>>({
     title: null,
     timeline: null,
@@ -96,7 +96,7 @@ export function ShareStory({ data, headline, source }: Props) {
                     variant={variant}
                     data={data}
                     headline={headline}
-                    source={source}
+                    sourceUrl={sourceUrl}
                   />
                 </div>
               </div>

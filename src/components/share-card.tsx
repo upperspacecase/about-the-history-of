@@ -45,6 +45,13 @@ const clamp = (lines: number): CSSProperties => ({
   overflow: "hidden",
 });
 
+function formatSourceUrl(url: string): string {
+  return url
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/+$/, "");
+}
+
 function Kicker({
   children,
   color = C.muted,
@@ -81,10 +88,10 @@ function StoryEyebrow({ text }: { text: string }) {
       <div
         style={{
           fontFamily: SERIF,
-          fontSize: 38,
+          fontSize: 76,
           fontWeight: 700,
-          lineHeight: 1.26,
-          color: C.fg,
+          lineHeight: 1.13,
+          color: C.truth,
           ...clamp(3),
         }}
       >
@@ -98,10 +105,15 @@ interface ShareCardProps {
   variant: ShareCardVariant;
   data: HistoryResponse;
   headline: string;
-  source?: string;
+  sourceUrl?: string;
 }
 
-export function ShareCard({ variant, data, headline, source }: ShareCardProps) {
+export function ShareCard({
+  variant,
+  data,
+  headline,
+  sourceUrl,
+}: ShareCardProps) {
   const truthHeadline = data.truthHeadline?.trim();
   const eyebrowText = truthHeadline || headline;
   const hasSignificance = typeof data.significance === "number";
@@ -109,6 +121,21 @@ export function ShareCard({ variant, data, headline, source }: ShareCardProps) {
   let body: ReactNode = null;
 
   if (variant === "title") {
+    const sourceLine = sourceUrl ? (
+      <div
+        style={{
+          fontFamily: SANS,
+          fontSize: 24,
+          color: C.muted,
+          marginTop: 18,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        Source: {formatSourceUrl(sourceUrl)}
+      </div>
+    ) : null;
     body = (
       <div
         style={{
@@ -118,26 +145,25 @@ export function ShareCard({ variant, data, headline, source }: ShareCardProps) {
           justifyContent: "center",
         }}
       >
-        {source ? (
-          <div style={{ marginBottom: 36 }}>
-            <Kicker color={C.accent}>{source}</Kicker>
-          </div>
-        ) : null}
         {truthHeadline ? (
           <>
             <div
               style={{
                 fontFamily: SERIF,
-                fontSize: 44,
+                fontSize: 74,
                 fontWeight: 700,
-                lineHeight: 1.28,
+                lineHeight: 1.14,
                 color: C.muted,
                 textDecoration: "line-through",
                 textDecorationColor: "rgba(107,107,107,0.55)",
-                textDecorationThickness: "3px",
+                textDecorationThickness: "4px",
               }}
             >
               {headline}
+            </div>
+            {sourceLine}
+            <div style={{ marginTop: 40 }}>
+              <Kicker color={C.accent}>The Long View Critique</Kicker>
             </div>
             <div
               style={{
@@ -146,24 +172,27 @@ export function ShareCard({ variant, data, headline, source }: ShareCardProps) {
                 fontWeight: 700,
                 lineHeight: 1.14,
                 color: C.truth,
-                marginTop: 32,
+                marginTop: 14,
               }}
             >
               {truthHeadline}
             </div>
           </>
         ) : (
-          <div
-            style={{
-              fontFamily: SERIF,
-              fontSize: 74,
-              fontWeight: 700,
-              lineHeight: 1.14,
-              color: C.fg,
-            }}
-          >
-            {headline}
-          </div>
+          <>
+            <div
+              style={{
+                fontFamily: SERIF,
+                fontSize: 74,
+                fontWeight: 700,
+                lineHeight: 1.14,
+                color: C.fg,
+              }}
+            >
+              {headline}
+            </div>
+            {sourceLine}
+          </>
         )}
         {hasSignificance ? (
           <div style={{ marginTop: 64 }}>
@@ -401,17 +430,30 @@ export function ShareCard({ variant, data, headline, source }: ShareCardProps) {
       } as CSSProperties}
     >
       <div style={{ flexShrink: 0 }}>
-        <div
-          style={{
-            fontFamily: SERIF,
-            fontSize: 30,
-            fontWeight: 700,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            color: C.fg,
-          }}
-        >
-          The Long View
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <div
+            style={{
+              width: 69,
+              height: 48,
+              flexShrink: 0,
+              backgroundImage: "url(/logo.png)",
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "left center",
+            }}
+          />
+          <div
+            style={{
+              fontFamily: SERIF,
+              fontSize: 30,
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              color: C.fg,
+            }}
+          >
+            The Long View
+          </div>
         </div>
         <div style={{ height: 2, background: C.fg, marginTop: 14 }} />
       </div>

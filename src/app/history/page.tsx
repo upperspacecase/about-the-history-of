@@ -462,7 +462,11 @@ function HistoryContent() {
             )}
 
             {/* Share this story */}
-            <ShareStory data={result} headline={headline} source={source} />
+            <ShareStory
+              data={result}
+              headline={headline}
+              sourceUrl={originalLink}
+            />
 
             {/* Back link */}
             <div className="pt-4 border-t border-border">
