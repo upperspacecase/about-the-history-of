@@ -6,37 +6,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignificanceDots } from "@/components/significance-dots";
-
-interface TimelineEvent {
-  year: string;
-  title: string;
-  description: string;
-  link: string;
-}
-
-interface Pattern {
-  title: string;
-  description: string;
-}
-
-interface FurtherReading {
-  title: string;
-  author: string;
-  type: string;
-  link: string;
-}
-
-interface HistoryResponse {
-  topic: string;
-  summary: string;
-  truthHeadline?: string;
-  significance?: number;
-  significanceReason?: string;
-  timeline: TimelineEvent[];
-  patterns: Pattern[];
-  furtherReading: FurtherReading[];
-  whyItMattersNow: string;
-}
+import { ShareStory } from "@/components/share-story";
+import type { HistoryResponse } from "@/lib/history-types";
 
 const GENERATION_STAGES = [
   "Searching the archive…",
@@ -489,6 +460,9 @@ function HistoryContent() {
                 </div>
               </section>
             )}
+
+            {/* Share this story */}
+            <ShareStory data={result} headline={headline} source={source} />
 
             {/* Back link */}
             <div className="pt-4 border-t border-border">
