@@ -465,6 +465,7 @@ function HistoryContent() {
             <ShareStory
               data={result}
               headline={headline}
+              source={source}
               sourceUrl={originalLink}
             />
 

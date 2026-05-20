@@ -1,5 +1,11 @@
-import type { CSSProperties, ReactNode } from "react";
-import { SignificanceDots } from "@/components/significance-dots";
+"use client";
+
+import {
+  useLayoutEffect,
+  useRef,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import type { HistoryResponse } from "@/lib/history-types";
 
 export type ShareCardVariant = "title" | "timeline" | "patterns" | "matters";
@@ -38,6 +44,13 @@ const C = {
 const SERIF = 'Georgia, "Times New Roman", serif';
 const SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
 
+// Height reserved for the green story title on the non-headline cards.
+const TITLE_REGION: Record<"timeline" | "patterns" | "matters", number> = {
+  timeline: 360,
+  patterns: 380,
+  matters: 360,
+};
+
 const clamp = (lines: number): CSSProperties => ({
   display: "-webkit-box",
   WebkitLineClamp: lines,
@@ -50,6 +63,14 @@ function formatSourceUrl(url: string): string {
     .replace(/^https?:\/\//, "")
     .replace(/^www\./, "")
     .replace(/\/+$/, "");
+}
+
+function todayLabel(): string {
+  return new Date().toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function Kicker({
@@ -75,27 +96,83 @@ function Kicker({
   );
 }
 
-function StoryEyebrow({ text }: { text: string }) {
+/** Renders text as large as it can be while still fitting within maxHeight. */
+function AutoFitText({
+  text,
+  maxHeight,
+  maxFontSize,
+  minFontSize,
+  style,
+}: {
+  text: string;
+  maxHeight: number;
+  maxFontSize: number;
+  minFontSize: number;
+  style: CSSProperties;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Fit imperatively (not via React state) so the chosen size survives parent
+  // re-renders without re-running the search, and html-to-image captures it.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let lo = minFontSize;
+    let hi = maxFontSize;
+    let best = minFontSize;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      el.style.fontSize = `${mid}px`;
+      if (el.scrollHeight <= maxHeight) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    el.style.fontSize = `${best}px`;
+  }, [text, maxHeight, maxFontSize, minFontSize]);
+
+  return (
+    <div ref={ref} style={style}>
+      {text}
+    </div>
+  );
+}
+
+/** Green story title sized to fill a fixed region above the card content. */
+function StoryTitle({ text, height }: { text: string; height: number }) {
   return (
     <div
       style={{
-        marginBottom: 40,
-        paddingBottom: 28,
+        marginBottom: 32,
+        paddingBottom: 24,
         borderBottom: `1px solid ${C.border}`,
         flexShrink: 0,
       }}
     >
       <div
         style={{
-          fontFamily: SERIF,
-          fontSize: 76,
-          fontWeight: 700,
-          lineHeight: 1.13,
-          color: C.truth,
-          ...clamp(3),
+          height,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          overflow: "hidden",
         }}
       >
-        {text}
+        <AutoFitText
+          text={text}
+          maxHeight={height}
+          maxFontSize={104}
+          minFontSize={32}
+          style={{
+            fontFamily: SERIF,
+            fontWeight: 700,
+            lineHeight: 1.1,
+            color: C.truth,
+            width: "100%",
+          }}
+        />
       </div>
     </div>
   );
@@ -105,6 +182,7 @@ interface ShareCardProps {
   variant: ShareCardVariant;
   data: HistoryResponse;
   headline: string;
+  source?: string;
   sourceUrl?: string;
 }
 
@@ -112,11 +190,11 @@ export function ShareCard({
   variant,
   data,
   headline,
+  source,
   sourceUrl,
 }: ShareCardProps) {
   const truthHeadline = data.truthHeadline?.trim();
-  const eyebrowText = truthHeadline || headline;
-  const hasSignificance = typeof data.significance === "number";
+  const storyTitle = truthHeadline || headline;
 
   let body: ReactNode = null;
 
@@ -145,6 +223,11 @@ export function ShareCard({
           justifyContent: "center",
         }}
       >
+        {source ? (
+          <div style={{ marginBottom: 24 }}>
+            <Kicker color={C.accent}>headline from {source}</Kicker>
+          </div>
+        ) : null}
         {truthHeadline ? (
           <>
             <div
@@ -194,66 +277,13 @@ export function ShareCard({
             {sourceLine}
           </>
         )}
-        {hasSignificance ? (
-          <div style={{ marginTop: 64 }}>
-            <Kicker>Historical significance</Kicker>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 24,
-                marginTop: 22,
-              }}
-            >
-              {/* SignificanceDots is sized for the website; scale it up for the
-                  1080px card. Wrapper reserves the post-transform footprint. */}
-              <div style={{ width: 320, height: 26, position: "relative" }}>
-                <div
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    transform: "scale(2.6)",
-                    transformOrigin: "0 0",
-                  }}
-                >
-                  <SignificanceDots score={data.significance!} size="lg" />
-                </div>
-              </div>
-              <div
-                style={{
-                  fontFamily: SERIF,
-                  fontSize: 34,
-                  fontWeight: 700,
-                  color: C.fg,
-                }}
-              >
-                {data.significance}/10
-              </div>
-            </div>
-            {data.significanceReason ? (
-              <div
-                style={{
-                  fontFamily: SERIF,
-                  fontSize: 27,
-                  lineHeight: 1.4,
-                  color: C.muted,
-                  marginTop: 22,
-                  ...clamp(2),
-                }}
-              >
-                {data.significanceReason}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
       </div>
     );
   } else if (variant === "timeline") {
-    const events = data.timeline.slice(0, 5);
+    const events = data.timeline.slice(0, 4);
     body = (
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <StoryEyebrow text={eyebrowText} />
+        <StoryTitle text={storyTitle} height={TITLE_REGION.timeline} />
         <div style={{ marginBottom: 32 }}>
           <Kicker>Key moments in history</Kicker>
         </div>
@@ -264,8 +294,7 @@ export function ShareCard({
               style={{
                 paddingBottom: 22,
                 marginBottom: 22,
-                borderBottom:
-                  i < events.length - 1 ? `1px solid ${C.border}` : "none",
+                borderBottom: `1px solid ${C.border}`,
               }}
             >
               <div
@@ -306,6 +335,33 @@ export function ShareCard({
               </div>
             </div>
           ))}
+          {/* The present — where the timeline lands today. */}
+          <div style={{ paddingTop: 6 }}>
+            <div
+              style={{
+                fontFamily: SANS,
+                fontSize: 22,
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: C.accent,
+              }}
+            >
+              We are here
+            </div>
+            <div
+              style={{
+                fontFamily: SERIF,
+                fontSize: 44,
+                fontWeight: 700,
+                lineHeight: 1.2,
+                color: C.accent,
+                marginTop: 6,
+              }}
+            >
+              {todayLabel()}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -313,7 +369,7 @@ export function ShareCard({
     const patterns = data.patterns.slice(0, 4);
     body = (
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <StoryEyebrow text={eyebrowText} />
+        <StoryTitle text={storyTitle} height={TITLE_REGION.patterns} />
         <div style={{ marginBottom: 28 }}>
           <Kicker>Recurring patterns</Kicker>
         </div>
@@ -346,7 +402,7 @@ export function ShareCard({
                   lineHeight: 1.42,
                   color: C.muted,
                   marginTop: 12,
-                  ...clamp(3),
+                  ...clamp(2),
                 }}
               >
                 {pattern.description}
@@ -359,7 +415,7 @@ export function ShareCard({
   } else {
     body = (
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <StoryEyebrow text={eyebrowText} />
+        <StoryTitle text={storyTitle} height={TITLE_REGION.matters} />
         <div
           style={{
             flex: 1,
@@ -430,7 +486,14 @@ export function ShareCard({
       } as CSSProperties}
     >
       <div style={{ flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 18,
+          }}
+        >
           <div
             style={{
               width: 69,
@@ -439,7 +502,7 @@ export function ShareCard({
               backgroundImage: "url(/logo.png)",
               backgroundSize: "contain",
               backgroundRepeat: "no-repeat",
-              backgroundPosition: "left center",
+              backgroundPosition: "center",
             }}
           />
           <div
@@ -480,6 +543,7 @@ export function ShareCard({
             fontWeight: 700,
             letterSpacing: "0.02em",
             color: C.accent,
+            textAlign: "center",
           }}
         >
           thelongview.org
