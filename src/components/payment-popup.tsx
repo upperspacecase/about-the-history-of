@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { ExampleStory } from "./example-story";
+import { EmailCapture } from "@/components/email-capture";
 
 interface PaymentPopupProps {
   dateLabel: string;
@@ -66,7 +67,7 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
   const [signInLoading, setSignInLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const price = plan === "yearly" ? "£34" : "£5";
+  const price = plan === "yearly" ? "£200" : "£29";
   const period = plan === "yearly" ? "/yr" : "/mo";
 
   async function ensureSignedIn(): Promise<string | null> {
@@ -265,6 +266,14 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
               >
                 Preview free
               </Link>
+            </section>
+
+            {/* Free daily email */}
+            <section className="border-t border-border pt-5">
+              <EmailCapture
+                heading="Not ready? Get the daily email — free."
+                sub="The 3 headlines that matter, with the history behind them, each morning."
+              />
             </section>
 
             {/* Sign in */}

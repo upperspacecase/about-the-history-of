@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignificanceDots } from "@/components/significance-dots";
+import { EmailCapture } from "@/components/email-capture";
 
 interface Headline {
   title: string;
@@ -69,27 +70,6 @@ export default function PreviewPage() {
     const rewritten = headlines.filter((h) => !!h.truthHeadline);
     return pickRandom(rewritten, 3);
   }, [headlines]);
-
-  const [email, setEmail] = useState("");
-  const [subStatus, setSubStatus] = useState<
-    "idle" | "loading" | "done" | "error"
-  >("idle");
-
-  async function handleSubscribe(e: FormEvent) {
-    e.preventDefault();
-    if (subStatus === "loading") return;
-    setSubStatus("loading");
-    try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      setSubStatus(res.ok ? "done" : "error");
-    } catch {
-      setSubStatus("error");
-    }
-  }
 
   return (
     <div className="flex flex-col flex-1">
@@ -237,58 +217,16 @@ export default function PreviewPage() {
         )}
 
         <div className="mt-12 border-t border-border pt-8">
-          {subStatus === "done" ? (
-            <p
-              className="text-base text-green-700 dark:text-green-500"
-              style={{ fontFamily: "var(--font-serif)" }}
-            >
-              You&apos;re on the list. Tomorrow&apos;s Long View lands in your inbox.
-            </p>
-          ) : (
-            <div className="max-w-xl">
-              <p
-                className="text-base font-semibold"
-                style={{ fontFamily: "var(--font-serif)" }}
-              >
-                Get the daily Long View — free.
-              </p>
-              <p className="text-sm text-muted mt-1 mb-3">
-                One headline, the history behind it, each morning. If you&apos;re
-                not a student of history, everything feels unprecedented.
-              </p>
-              <form
-                onSubmit={handleSubscribe}
-                className="flex flex-col sm:flex-row gap-2"
-              >
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="flex-1 border border-border rounded px-3 py-2 text-sm bg-transparent focus:outline-none focus:border-accent"
-                />
-                <button
-                  type="submit"
-                  disabled={subStatus === "loading"}
-                  className="inline-flex items-center justify-center gap-2 bg-accent text-white font-semibold px-4 py-2 rounded hover:opacity-90 transition-opacity disabled:opacity-60"
-                >
-                  {subStatus === "loading" ? "Adding…" : "Get the daily email"}
-                </button>
-              </form>
-              {subStatus === "error" && (
-                <p className="text-xs text-red-600 mt-2">
-                  Something went wrong. Try again.
-                </p>
-              )}
-              <p className="text-xs text-muted mt-3">
-                Want the full archive and timelines?{" "}
-                <Link href="/" className="text-accent underline">
-                  See subscription options
-                </Link>
-              </p>
-            </div>
-          )}
+          <EmailCapture
+            heading="Get the daily Long View — free."
+            sub="One headline, the history behind it, each morning. If you're not a student of history, everything feels unprecedented."
+          />
+          <p className="text-xs text-muted mt-3">
+            Want the full archive and timelines?{" "}
+            <Link href="/" className="text-accent underline">
+              See subscription options
+            </Link>
+          </p>
         </div>
       </main>
 

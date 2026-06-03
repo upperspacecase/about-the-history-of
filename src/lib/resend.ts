@@ -187,7 +187,8 @@ export async function sendDailyDigestEmail({
       </td></tr>
     </table>
     <p style="font-size:11px;color:#9a9a9a;margin:18px 0 0;font-family:${sans};">
-      You signed up for the daily Long View. <a href="${unsubscribeUrl}" style="color:#9a9a9a;">Unsubscribe</a>.
+      You signed up for the daily Long View. <a href="${unsubscribeUrl}" style="color:#9a9a9a;">Unsubscribe</a>.<br/>
+      The Long View &middot; 129 Pritchards Rd, London, UK
     </p>
   </td></tr></table>
 </body></html>`;
@@ -200,7 +201,7 @@ export async function sendDailyDigestEmail({
           `[${s.significance}/10] ${s.truthHeadline}\n${s.significanceReason}\n${site}/history?headline=${encodeURIComponent(s.headline)}`
       )
       .join("\n\n") +
-    `\n\n— The Long View · thelongview.org\nUnsubscribe: ${unsubscribeUrl}`;
+    `\n\n— The Long View · thelongview.org · 129 Pritchards Rd, London, UK\nUnsubscribe: ${unsubscribeUrl}`;
 
   await resend.emails.send({
     from: FROM,

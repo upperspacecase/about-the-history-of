@@ -59,10 +59,10 @@ async function main() {
       const dateKey = new Date().toISOString().slice(0, 10);
       const blobUrl = await uploadAsset(outPath, `reels/${dateKey}/${id}.mp4`);
 
-      const { igCaption, fbDescription } = buildCaption(doc);
-      const ids = await publishReel({ videoUrl: blobUrl, igCaption, fbDescription });
+      const { igCaption } = buildCaption(doc);
+      const ids = await publishReel({ videoUrl: blobUrl, igCaption });
 
-      if (!ids.instagramMediaId && !ids.facebookVideoId) {
+      if (!ids.instagramMediaId) {
         console.error(`Failed to post "${candidate.title}": ${ids.errors.join("; ")}`);
         continue;
       }
@@ -71,15 +71,14 @@ async function main() {
         headline: candidate.title,
         blobUrl,
         instagramMediaId: ids.instagramMediaId,
-        facebookVideoId: ids.facebookVideoId,
         errors: ids.errors,
         postedAt: FieldValue.serverTimestamp(),
       });
 
       posted += 1;
       console.log(
-        `Posted: "${candidate.title}" (ig ${ids.instagramMediaId ?? "—"}, fb ${ids.facebookVideoId ?? "—"})` +
-          (ids.errors.length ? ` [partial: ${ids.errors.join("; ")}]` : "")
+        `Posted: "${candidate.title}" (ig ${ids.instagramMediaId})` +
+          (ids.errors.length ? ` [errors: ${ids.errors.join("; ")}]` : "")
       );
     } catch (err) {
       console.error(`Failed to post "${candidate.title}":`, err);

@@ -1,14 +1,12 @@
-// Direct Meta Graph API publishing for The Long View daily Reels.
-// Facebook-Login config: one long-lived Page access token drives BOTH the
-// linked Instagram account and the Facebook Page. The Reel must already be
-// hosted at a public HTTPS URL — Meta fetches it server-side.
+// Direct Meta Graph API publishing for The Long View daily Reels (Instagram only).
+// Facebook Page publishing was removed: pages_manage_posts is gated behind Meta
+// App Review for this app, so the pipeline publishes to Instagram only.
 //
-// Required env: META_PAGE_ACCESS_TOKEN, IG_USER_ID, FB_PAGE_ID
+// Required env: META_PAGE_ACCESS_TOKEN, IG_USER_ID
 // Verified against Meta Graph API v25.0 (developers.facebook.com, 2026-06-03).
 
 const API_VERSION = "v25.0";
 const GRAPH = `https://graph.facebook.com/${API_VERSION}`;
-const RUPLOAD = `https://rupload.facebook.com/video-upload/${API_VERSION}`;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -100,67 +98,18 @@ export async function publishInstagramReel(input: {
   return published.id;
 }
 
-/** Publish a Reel to the Facebook Page. Returns the Page video ID. */
-export async function publishFacebookReel(input: {
-  videoUrl: string;
-  description: string;
-}): Promise<string> {
-  const token = requireEnv("META_PAGE_ACCESS_TOKEN");
-  const pageId = requireEnv("FB_PAGE_ID");
-
-  // 1. Start an upload session.
-  const start = await graphPost<{ video_id: string }>(
-    `/${pageId}/video_reels`,
-    { upload_phase: "start" },
-    token,
-  );
-
-  // 2. Hand Meta the public URL to ingest. The host must allow the
-  //    facebookexternalhit user agent and must not be an fbcdn URL — Vercel Blob is fine.
-  const uploadRes = await fetch(`${RUPLOAD}/${start.video_id}`, {
-    method: "POST",
-    headers: {
-      Authorization: `OAuth ${token}`,
-      file_url: input.videoUrl,
-    },
-  });
-  await parseGraph<{ success?: boolean }>(uploadRes);
-
-  // 3. Publish. If Meta reports the video is not yet ready here, poll
-  //    GET /{video_id}?fields=status before finishing.
-  await graphPost<{ success?: boolean }>(
-    `/${pageId}/video_reels`,
-    {
-      upload_phase: "finish",
-      video_id: start.video_id,
-      video_state: "PUBLISHED",
-      description: input.description,
-    },
-    token,
-  );
-  return start.video_id;
-}
-
 export interface PublishResult {
   instagramMediaId: string | null;
-  facebookVideoId: string | null;
   errors: string[];
 }
 
-/**
- * Publish one Reel to both Instagram and the Facebook Page. Each platform is
- * isolated: a failure on one is recorded in `errors` but does not discard the
- * other's success, so the caller can still dedupe and log what went out.
- */
+/** Publish one Reel to Instagram. */
 export async function publishReel(input: {
   videoUrl: string;
   igCaption: string;
-  fbDescription: string;
 }): Promise<PublishResult> {
   const errors: string[] = [];
   let instagramMediaId: string | null = null;
-  let facebookVideoId: string | null = null;
-
   try {
     instagramMediaId = await publishInstagramReel({
       videoUrl: input.videoUrl,
@@ -169,15 +118,5 @@ export async function publishReel(input: {
   } catch (err) {
     errors.push(`instagram: ${err instanceof Error ? err.message : String(err)}`);
   }
-
-  try {
-    facebookVideoId = await publishFacebookReel({
-      videoUrl: input.videoUrl,
-      description: input.fbDescription,
-    });
-  } catch (err) {
-    errors.push(`facebook: ${err instanceof Error ? err.message : String(err)}`);
-  }
-
-  return { instagramMediaId, facebookVideoId, errors };
+  return { instagramMediaId, errors };
 }
