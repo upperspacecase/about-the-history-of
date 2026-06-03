@@ -2,6 +2,16 @@ import { Resend } from "resend";
 
 const FROM = "The Long View <welcome@thelongview.org>";
 
+const SITE = "https://thelongview.org";
+const MASTHEAD = `
+  <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 18px;">
+    <tr>
+      <td style="vertical-align:middle;padding-right:10px;"><img src="${SITE}/logo.png" width="40" height="28" alt="The Long View" style="display:block;border:0;" /></td>
+      <td style="vertical-align:middle;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#111111;">The Long View</td>
+    </tr>
+  </table>
+  <div style="height:2px;background:#111111;margin:0 0 26px;"></div>`;
+
 let cached: Resend | null = null;
 
 function client(): Resend | null {
@@ -36,7 +46,7 @@ export async function sendWelcomeEmail({
           <table role="presentation" width="540" cellpadding="0" cellspacing="0" style="max-width:540px;background:#ffffff;border:1px solid #e0ddd8;border-radius:10px;padding:40px;">
             <tr>
               <td>
-                <p style="font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#6b6b6b;margin:0 0 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">The Long View</p>
+                ${MASTHEAD}
                 <h1 style="font-size:30px;line-height:1.2;font-weight:700;margin:0 0 18px;letter-spacing:-0.01em;">Welcome.</h1>
                 <p style="font-size:17px;line-height:1.55;color:#333;margin:0 0 16px;">${greeting}</p>
                 <p style="font-size:17px;line-height:1.55;color:#333;margin:0 0 16px;">If you're not a student of history, everything feels unprecedented. We&rsquo;re here to fix that — one headline at a time.</p>
@@ -94,7 +104,7 @@ export async function sendSubscribeConfirmation({ to }: { to: string }) {
           <table role="presentation" width="540" cellpadding="0" cellspacing="0" style="max-width:540px;background:#ffffff;border:1px solid #e0ddd8;border-radius:10px;padding:40px;">
             <tr>
               <td>
-                <p style="font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#6b6b6b;margin:0 0 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">The Long View</p>
+                ${MASTHEAD}
                 <h1 style="font-size:30px;line-height:1.2;font-weight:700;margin:0 0 18px;letter-spacing:-0.01em;">You&rsquo;re on the list.</h1>
                 <p style="font-size:17px;line-height:1.55;color:#333;margin:0 0 16px;">Each morning we take a headline and show you the history behind it — the precedent, the pattern, the part that makes today legible.</p>
                 <p style="font-size:17px;line-height:1.55;color:#333;margin:0 0 28px;">If you&rsquo;re not a student of history, everything feels unprecedented. Now you&rsquo;ve got context.</p>
@@ -179,7 +189,7 @@ export async function sendDailyDigestEmail({
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f6;padding:40px 20px;"><tr><td align="center">
     <table role="presentation" width="540" cellpadding="0" cellspacing="0" style="max-width:540px;background:#ffffff;border:1px solid #e0ddd8;border-radius:10px;padding:40px;">
       <tr><td>
-        <p style="font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#6b6b6b;margin:0 0 18px;font-family:${sans};">The Long View</p>
+        ${MASTHEAD}
         <h1 style="font-size:26px;line-height:1.2;font-weight:700;margin:0 0 6px;">The 3 headlines that matter today</h1>
         <p style="font-size:15px;color:#6b6b6b;margin:0 0 28px;">And the history behind them.</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${storyBlocks}</table>

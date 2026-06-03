@@ -10,6 +10,7 @@ import {
   type ShareCardVariant,
 } from "@/components/share-card";
 import { cardFileName, nodeToPngFile, shareOrDownload } from "@/lib/share-card";
+import { ShareSafeFrame } from "@/components/share-safe-frame";
 import type { HistoryResponse } from "@/lib/history-types";
 
 const PREVIEW_WIDTH = 260;
@@ -93,13 +94,15 @@ export function ShareStory({ data, headline, source, sourceUrl }: Props) {
                     cardRefs.current[variant] = el;
                   }}
                 >
-                  <ShareCard
-                    variant={variant}
-                    data={data}
-                    headline={headline}
-                    source={source}
-                    sourceUrl={sourceUrl}
-                  />
+                  <ShareSafeFrame>
+                    <ShareCard
+                      variant={variant}
+                      data={data}
+                      headline={headline}
+                      source={source}
+                      sourceUrl={sourceUrl}
+                    />
+                  </ShareSafeFrame>
                 </div>
               </div>
             </div>

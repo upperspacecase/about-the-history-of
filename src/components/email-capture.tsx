@@ -2,13 +2,19 @@
 
 import { useState, type FormEvent } from "react";
 
-/** Reusable daily-email capture form. Posts to /api/subscribe. */
+/** Reusable email capture form. Posts to /api/subscribe with an optional source tag. */
 export function EmailCapture({
   heading,
   sub,
+  source,
+  buttonLabel = "Get the daily email",
+  doneMessage = "You're on the list. Tomorrow's Long View lands in your inbox.",
 }: {
   heading?: string;
   sub?: string;
+  source?: string;
+  buttonLabel?: string;
+  doneMessage?: string;
 }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
@@ -23,7 +29,7 @@ export function EmailCapture({
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, source }),
       });
       setStatus(res.ok ? "done" : "error");
     } catch {
@@ -37,7 +43,7 @@ export function EmailCapture({
         className="text-sm text-green-700 dark:text-green-500"
         style={{ fontFamily: "var(--font-serif)" }}
       >
-        You&apos;re on the list. Tomorrow&apos;s Long View lands in your inbox.
+        {doneMessage}
       </p>
     );
   }
@@ -67,7 +73,7 @@ export function EmailCapture({
           disabled={status === "loading"}
           className="inline-flex items-center justify-center gap-2 bg-accent text-white font-semibold px-4 py-2 rounded hover:opacity-90 transition-opacity disabled:opacity-60"
         >
-          {status === "loading" ? "Adding…" : "Get the daily email"}
+          {status === "loading" ? "Adding…" : buttonLabel}
         </button>
       </form>
       {status === "error" && (

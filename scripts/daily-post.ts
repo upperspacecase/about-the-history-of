@@ -6,7 +6,7 @@ import { headlineKey } from "../src/lib/history-key";
 import { getAdminDb } from "../src/lib/firebase/admin";
 import { buildCaption } from "../src/lib/caption";
 import { renderReel } from "./lib/render-reel";
-import { uploadAsset } from "./lib/upload-asset";
+import { uploadAsset, cleanupOldBlobs } from "./lib/upload-asset";
 import { publishReel } from "./lib/meta-publish";
 import { sendDailyDigest } from "../src/lib/digest";
 import type { Headline } from "../src/lib/feeds";
@@ -96,6 +96,13 @@ async function main() {
     console.log(`Digest sent to ${sent} subscriber(s); ${failed} failed.`);
   } catch (err) {
     console.error("Digest send error:", err);
+  }
+
+  try {
+    const cleaned = await cleanupOldBlobs();
+    if (cleaned > 0) console.log(`Cleaned up ${cleaned} old Reel blob(s).`);
+  } catch (err) {
+    console.error("Blob cleanup error:", err);
   }
 
   const skippedAlreadyPosted = stories.length - fresh.length;

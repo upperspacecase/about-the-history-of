@@ -276,6 +276,31 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
               />
             </section>
 
+            {/* Coming soon: Intelligence Briefing */}
+            <section className="border-t border-border pt-5">
+              <div className="flex items-center gap-2 mb-1">
+                <h3
+                  className="text-base font-bold"
+                  style={{ fontFamily: "var(--font-serif)" }}
+                >
+                  The Intelligence Briefing
+                </h3>
+                <span className="text-[10px] uppercase tracking-wider bg-highlight text-accent px-2 py-0.5 rounded-full font-semibold">
+                  Coming soon
+                </span>
+              </div>
+              <p className="text-xs text-muted mb-3">
+                £300/yr, for founders, investors and operators. Be early, be
+                right — the patterns the headlines miss, applied to your
+                decisions.
+              </p>
+              <EmailCapture
+                source="briefing-waitlist"
+                buttonLabel="Join the waitlist"
+                doneMessage="You're on the waitlist. We'll email you when the Briefing opens."
+              />
+            </section>
+
             {/* Sign in */}
             <section className="border-t border-border pt-5">
               <h3
