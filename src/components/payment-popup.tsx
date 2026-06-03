@@ -31,6 +31,40 @@ const PRINCIPLES = [
   },
 ];
 
+const READER_FEATURES = [
+  "Each headline reframed — the truth beneath the surface",
+  "Full timelines, patterns and precedent, per story",
+  "The complete daily archive",
+];
+
+const BRIEFING_FEATURES = [
+  "Ask the Historian — precedent for your decisions",
+  "A weekly operator briefing, tuned to your world",
+  "What to watch next, not only what happened",
+  "Searchable archive — precedent for any headline",
+];
+
+function Check() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      aria-hidden
+      className="shrink-0 mt-0.5 text-green-700 dark:text-green-500"
+    >
+      <path
+        d="M3.5 8.5l3 3 6-7.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function GoogleLogo() {
   return (
     <svg
@@ -139,7 +173,6 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
         );
         return;
       }
-      // success — page useEffect picks up the paying status and hides the popup
     } catch {
       setError("Sign-in was cancelled or failed.");
     } finally {
@@ -155,187 +188,208 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
       aria-labelledby="paywall-title"
     >
       <div className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto animate-fade-in">
-        {/* Top: hero copy + pricing/sign-in */}
-        <div className="grid grid-cols-1 md:grid-cols-5">
-          {/* Hero copy + principles */}
-          <div className="md:col-span-3 p-6 md:p-8 border-b md:border-b-0 md:border-r border-border">
-            <p className="text-xs tracking-widest uppercase text-muted mb-3">
-              {dateLabel}
-            </p>
-            <h2
-              id="paywall-title"
-              className="text-3xl md:text-4xl font-bold leading-[1.1] tracking-tight"
-              style={{ fontFamily: "var(--font-serif)" }}
-            >
-              Today&apos;s Headlines, in Context
-            </h2>
-            <p className="mt-4 text-sm md:text-base text-muted leading-relaxed">
-              The Long View turns major headlines into short historical
-              timelines — the precedent, the pattern, and the story beneath the
-              story.
-            </p>
+        <div className="p-6 md:p-10">
+          {/* Hero */}
+          <p className="text-xs tracking-widest uppercase text-muted mb-3">
+            {dateLabel}
+          </p>
+          <h2
+            id="paywall-title"
+            className="text-3xl md:text-4xl font-bold leading-[1.1] tracking-tight"
+            style={{ fontFamily: "var(--font-serif)" }}
+          >
+            Today&apos;s Headlines, in Context
+          </h2>
+          <p className="mt-4 text-sm md:text-base text-muted leading-relaxed max-w-2xl">
+            The Long View turns major headlines into short historical timelines —
+            the precedent, the pattern, and the story beneath the story.
+          </p>
 
-            <ol className="mt-6 space-y-4">
-              {PRINCIPLES.map((p) => (
-                <li key={p.icon} className="flex items-start gap-3">
-                  <Image
-                    src={p.icon}
-                    alt=""
-                    aria-hidden
-                    width={48}
-                    height={48}
-                    className="shrink-0 w-12 h-12"
-                  />
-                  <div>
-                    <h3
-                      className="text-sm font-semibold mb-0.5"
-                      style={{ fontFamily: "var(--font-serif)" }}
-                    >
-                      {p.title}
-                    </h3>
-                    <p className="text-xs text-muted leading-relaxed">
-                      {p.body}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
+          {/* Principles */}
+          <ol className="mt-7 grid grid-cols-1 md:grid-cols-3 gap-5">
+            {PRINCIPLES.map((p) => (
+              <li key={p.icon} className="flex items-start gap-3">
+                <Image
+                  src={p.icon}
+                  alt=""
+                  aria-hidden
+                  width={40}
+                  height={40}
+                  className="shrink-0 w-10 h-10"
+                />
+                <div>
+                  <h3
+                    className="text-sm font-semibold mb-0.5"
+                    style={{ fontFamily: "var(--font-serif)" }}
+                  >
+                    {p.title}
+                  </h3>
+                  <p className="text-xs text-muted leading-relaxed">{p.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
 
-          {/* Pricing + Sign-in */}
-          <div className="md:col-span-2 bg-highlight p-6 md:p-8 flex flex-col gap-6">
-            {/* Subscribe */}
-            <section>
-              <h3
-                className="text-lg font-bold mb-3"
-                style={{ fontFamily: "var(--font-serif)" }}
-              >
-                Subscribe
-              </h3>
-
-              <div className="inline-flex rounded-full border border-border bg-card p-1 mb-4 self-start">
-                <button
-                  type="button"
-                  onClick={() => setPlan("yearly")}
-                  className={
-                    plan === "yearly"
-                      ? "px-4 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full bg-accent text-white"
-                      : "px-4 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full text-muted hover:text-foreground transition-colors cursor-pointer"
-                  }
+          {/* Pricing cards */}
+          <div className="mt-9 grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* The Daily Reader */}
+            <div className="border border-border rounded-xl p-6 bg-card flex flex-col">
+              <div className="flex items-center justify-between gap-3">
+                <h3
+                  className="text-lg font-bold"
+                  style={{ fontFamily: "var(--font-serif)" }}
                 >
-                  Yearly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlan("monthly")}
-                  className={
-                    plan === "monthly"
-                      ? "px-4 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full bg-accent text-white"
-                      : "px-4 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full text-muted hover:text-foreground transition-colors cursor-pointer"
-                  }
-                >
-                  Monthly
-                </button>
+                  The Daily Reader
+                </h3>
+                <div className="inline-flex rounded-full border border-border bg-highlight p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setPlan("yearly")}
+                    className={
+                      plan === "yearly"
+                        ? "px-3 py-1 text-[11px] font-medium uppercase tracking-wider rounded-full bg-accent text-white"
+                        : "px-3 py-1 text-[11px] font-medium uppercase tracking-wider rounded-full text-muted hover:text-foreground transition-colors cursor-pointer"
+                    }
+                  >
+                    Yearly
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPlan("monthly")}
+                    className={
+                      plan === "monthly"
+                        ? "px-3 py-1 text-[11px] font-medium uppercase tracking-wider rounded-full bg-accent text-white"
+                        : "px-3 py-1 text-[11px] font-medium uppercase tracking-wider rounded-full text-muted hover:text-foreground transition-colors cursor-pointer"
+                    }
+                  >
+                    Monthly
+                  </button>
+                </div>
               </div>
-
-              <div className="mb-4 flex items-baseline gap-2">
-                <span className="text-4xl font-bold tracking-tight">
-                  {price}
-                </span>
+              <div className="mt-4 flex items-baseline gap-2">
+                <span className="text-4xl font-bold tracking-tight">{price}</span>
                 <span className="text-sm text-muted">{period}</span>
                 {plan === "yearly" && (
-                  <span className="ml-2 text-xs text-accent font-semibold uppercase tracking-wider">
+                  <span className="ml-1 text-xs text-accent font-semibold uppercase tracking-wider">
                     Save 43%
                   </span>
                 )}
               </div>
-
               <button
                 type="button"
                 onClick={handleCheckout}
                 disabled={checkoutLoading}
-                className="w-full bg-accent text-white font-semibold py-2.5 rounded hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-5 w-full bg-accent text-white font-semibold py-2.5 rounded hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {checkoutLoading ? "Opening Stripe…" : "Subscribe with Stripe"}
               </button>
               <p className="mt-2 text-xs text-muted">Cancel anytime.</p>
+              <ul className="mt-5 space-y-2.5 text-sm border-t border-border pt-5">
+                {READER_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5">
+                    <Check />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-              <Link
-                href="/preview"
-                className="mt-4 block text-center text-sm font-medium border border-border text-foreground py-2 rounded hover:border-accent hover:text-accent transition-colors"
-              >
-                Preview free
-              </Link>
-            </section>
-
-            {/* Free daily email */}
-            <section className="border-t border-border pt-5">
-              <EmailCapture
-                heading="Not ready? Get the daily email — free."
-                sub="The 3 headlines that matter, with the history behind them, each morning."
-              />
-            </section>
-
-            {/* Coming soon: Intelligence Briefing */}
-            <section className="border-t border-border pt-5">
-              <div className="flex items-center gap-2 mb-1">
+            {/* The Intelligence Briefing — coming soon */}
+            <div className="border border-accent/30 rounded-xl p-6 bg-highlight flex flex-col">
+              <div className="flex items-center gap-2">
                 <h3
-                  className="text-base font-bold"
+                  className="text-lg font-bold"
                   style={{ fontFamily: "var(--font-serif)" }}
                 >
                   The Intelligence Briefing
                 </h3>
-                <span className="text-[10px] uppercase tracking-wider bg-highlight text-accent px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-[10px] uppercase tracking-wider bg-accent text-white px-2 py-0.5 rounded-full font-semibold">
                   Coming soon
                 </span>
               </div>
-              <p className="text-xs text-muted mb-3">
-                £300/yr, for founders, investors and operators. Be early, be
-                right — the patterns the headlines miss, applied to your
-                decisions.
+              <div className="mt-4 flex items-baseline gap-2">
+                <span className="text-4xl font-bold tracking-tight">£300</span>
+                <span className="text-sm text-muted">/yr</span>
+              </div>
+              <p className="mt-1 text-xs text-muted">
+                For founders, investors and operators — be early, be right.
               </p>
-              <EmailCapture
-                source="briefing-waitlist"
-                buttonLabel="Join the waitlist"
-                doneMessage="You're on the waitlist. We'll email you when the Briefing opens."
-              />
-            </section>
+              <div className="mt-4">
+                <EmailCapture
+                  source="briefing-waitlist"
+                  buttonLabel="Join the waitlist"
+                  doneMessage="You're on the waitlist. We'll email you when the Briefing opens."
+                />
+              </div>
+              <ul className="mt-5 space-y-2.5 text-sm border-t border-border pt-5">
+                <li className="text-xs font-medium uppercase tracking-wider text-muted">
+                  Everything in The Daily Reader, plus:
+                </li>
+                {BRIEFING_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5">
+                    <Check />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
 
-            {/* Sign in */}
-            <section className="border-t border-border pt-5">
-              <h3
-                className="text-lg font-bold mb-1"
+          {/* Secondary actions */}
+          <div className="mt-9 grid grid-cols-1 sm:grid-cols-3 gap-5 border-t border-border pt-6 items-start">
+            <div>
+              <h4
+                className="text-sm font-semibold mb-2"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                Just browsing?
+              </h4>
+              <Link
+                href="/preview"
+                className="block w-full text-center text-sm font-medium border border-border text-foreground py-2 rounded hover:border-accent hover:text-accent transition-colors"
+              >
+                Free preview
+              </Link>
+            </div>
+            <div>
+              <h4
+                className="text-sm font-semibold mb-2"
                 style={{ fontFamily: "var(--font-serif)" }}
               >
                 Already a subscriber?
-              </h3>
-              <p className="text-xs text-muted mb-3">
-                Sign in to read today&apos;s history.
-              </p>
+              </h4>
               <button
                 type="button"
                 onClick={handleSignIn}
                 disabled={signInLoading}
-                className="w-full inline-flex items-center justify-center gap-3 bg-foreground text-background font-semibold py-2.5 rounded hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-3 bg-foreground text-background font-semibold py-2 rounded hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <span className="bg-white rounded p-1 flex items-center justify-center">
                   <GoogleLogo />
                 </span>
-                {signInLoading ? "Opening Google…" : "Sign in with Google"}
+                {signInLoading ? "Opening…" : "Sign in"}
               </button>
-            </section>
-
-            {error && (
-              <p className="text-xs text-accent" role="alert">
-                {error}
-              </p>
-            )}
+            </div>
+            <div>
+              <h4
+                className="text-sm font-semibold mb-2"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                Subscribe to the newsletter
+              </h4>
+              <EmailCapture source="paywall" buttonLabel="Subscribe" />
+            </div>
           </div>
-        </div>
+          {error && (
+            <p className="text-xs text-accent mt-3" role="alert">
+              {error}
+            </p>
+          )}
 
-        {/* Bottom: example story (full width on desktop, stacks below on mobile) */}
-        <div className="border-t border-border p-6 md:p-8">
-          <ExampleStory />
+          {/* Example story */}
+          <div className="border-t border-border mt-9 pt-6">
+            <ExampleStory />
+          </div>
         </div>
       </div>
     </div>
