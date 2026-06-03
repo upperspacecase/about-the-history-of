@@ -12,11 +12,15 @@ export function getStripe(): Stripe {
   return cached;
 }
 
-export function getPriceId(plan: "monthly" | "yearly"): string {
+export type Plan = "monthly" | "yearly" | "briefing";
+
+export function getPriceId(plan: Plan): string {
   const id =
     plan === "yearly"
       ? process.env.STRIPE_PRICE_YEARLY
-      : process.env.STRIPE_PRICE_MONTHLY;
+      : plan === "briefing"
+        ? process.env.STRIPE_PRICE_BRIEFING
+        : process.env.STRIPE_PRICE_MONTHLY;
   if (!id) {
     throw new Error(
       `Missing price ID env var for plan "${plan}": set STRIPE_PRICE_${plan.toUpperCase()}`

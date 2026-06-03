@@ -8,11 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "remotion:studio": "remotion studio",
-    "remotion:render": "remotion render Demo public/demo.mp4"
+    "remotion:render": "remotion render Demo public/demo.mp4",
+    "reel:render": "remotion render Reel out/reel.mp4",
+    "daily-post": "tsx scripts/daily-post.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/blob": "^2.4.0",
     "firebase": "^12.12.1",
     "firebase-admin": "^13.8.0",
     "html-to-image": "^1.11.13",
@@ -21,7 +24,8 @@
     "react-dom": "19.2.4",
     "resend": "^6.12.2",
     "rss-parser": "^3.13.0",
-    "stripe": "^22.1.1"
+    "stripe": "^22.1.1",
+    "tsx": "^4.22.4"
   },
   "devDependencies": {
     "@remotion/bundler": "^4.0.448",

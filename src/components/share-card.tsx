@@ -184,6 +184,8 @@ interface ShareCardProps {
   headline: string;
   source?: string;
   sourceUrl?: string;
+  // The site serves the brand mark at /logo.png; Remotion needs a staticFile() URL.
+  logoSrc?: string;
 }
 
 export function ShareCard({
@@ -192,6 +194,7 @@ export function ShareCard({
   headline,
   source,
   sourceUrl,
+  logoSrc = "/logo.png",
 }: ShareCardProps) {
   const truthHeadline = data.truthHeadline?.trim();
   const storyTitle = truthHeadline || headline;
@@ -499,7 +502,7 @@ export function ShareCard({
               width: 69,
               height: 48,
               flexShrink: 0,
-              backgroundImage: "url(/logo.png)",
+              backgroundImage: `url(${logoSrc})`,
               backgroundSize: "contain",
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",

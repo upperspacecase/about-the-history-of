@@ -1,5 +1,5 @@
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { getPriceId, getStripe } from "@/lib/stripe";
+import { getPriceId, getStripe, type Plan } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,12 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as
     | { plan?: unknown }
     | null;
-  const plan = body?.plan === "monthly" ? "monthly" : "yearly";
+  const plan: Plan =
+    body?.plan === "monthly"
+      ? "monthly"
+      : body?.plan === "briefing"
+        ? "briefing"
+        : "yearly";
 
   const origin =
     request.headers.get("origin") ??

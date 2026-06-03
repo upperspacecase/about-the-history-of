@@ -51,6 +51,7 @@ export async function POST(request: Request) {
           .set(
             {
               isPaying: true,
+              plan: (session.metadata?.plan as string | undefined) ?? null,
               stripeCustomerId:
                 typeof session.customer === "string"
                   ? session.customer
