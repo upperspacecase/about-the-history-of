@@ -6,18 +6,20 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization") ?? "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  if (!token) {
-    return Response.json({ error: "Missing token" }, { status: 401 });
-  }
 
-  let uid: string;
+  // Auth is optional. Subscribing does not require an account — you pay first
+  // and create the account afterward (it links by email). If a signed-in token
+  // is present we link the subscription to that account directly.
+  let uid: string | undefined;
   let email: string | undefined;
-  try {
-    const decoded = await getAdminAuth().verifyIdToken(token);
-    uid = decoded.uid;
-    email = decoded.email;
-  } catch {
-    return Response.json({ error: "Invalid token" }, { status: 401 });
+  if (token) {
+    try {
+      const decoded = await getAdminAuth().verifyIdToken(token);
+      uid = decoded.uid;
+      email = decoded.email;
+    } catch {
+      // Fall through as a signed-out checkout.
+    }
   }
 
   const body = (await request.json().catch(() => null)) as
@@ -34,11 +36,11 @@ export async function POST(request: Request) {
     request.headers.get("origin") ??
     `https://${request.headers.get("host") ?? "thelongview.org"}`;
 
-  const userRef = getAdminDb().collection("users").doc(uid);
-  const userSnap = await userRef.get();
-  const existingCustomerId = userSnap.data()?.stripeCustomerId as
-    | string
-    | undefined;
+  let existingCustomerId: string | undefined;
+  if (uid) {
+    const userSnap = await getAdminDb().collection("users").doc(uid).get();
+    existingCustomerId = userSnap.data()?.stripeCustomerId as string | undefined;
+  }
 
   const stripe = getStripe();
 
@@ -47,13 +49,13 @@ export async function POST(request: Request) {
     line_items: [{ price: getPriceId(plan), quantity: 1 }],
     success_url: `${origin}/?paid=1`,
     cancel_url: `${origin}/?paid=0`,
-    client_reference_id: uid,
     customer: existingCustomerId,
     customer_email: existingCustomerId ? undefined : email,
-    metadata: { uid, plan },
+    metadata: { plan, ...(uid ? { uid } : {}) },
     subscription_data: {
-      metadata: { uid, plan },
+      metadata: { plan, ...(uid ? { uid } : {}) },
     },
+    ...(uid ? { client_reference_id: uid } : {}),
     allow_promotion_codes: true,
   });
 

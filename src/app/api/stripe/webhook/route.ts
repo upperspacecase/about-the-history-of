@@ -1,7 +1,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import type Stripe from "stripe";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, paidCustomerKey } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -41,27 +41,57 @@ export async function POST(request: Request) {
         const uid =
           session.client_reference_id ??
           (session.metadata?.uid as string | undefined);
-        if (!uid) {
-          console.warn("checkout.session.completed without uid", session.id);
+        const plan = (session.metadata?.plan as string | undefined) ?? null;
+        const stripeCustomerId =
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer?.id;
+        const stripeSubscriptionId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : session.subscription?.id;
+
+        if (uid) {
+          // Signed-in checkout — link straight to the account.
+          await getAdminDb()
+            .collection("users")
+            .doc(uid)
+            .set(
+              {
+                isPaying: true,
+                plan,
+                stripeCustomerId,
+                stripeSubscriptionId,
+                stripeStatus: "active",
+                subscribedAt: FieldValue.serverTimestamp(),
+              },
+              { merge: true }
+            );
+          break;
+        }
+
+        // Pay-first checkout — no account yet. Stash the payment against the
+        // payer's email; it links when they sign in (see /api/users/init).
+        const payerEmail =
+          session.customer_details?.email ?? session.customer_email;
+        if (!payerEmail) {
+          console.warn(
+            "checkout.session.completed without uid or email",
+            session.id
+          );
           break;
         }
         await getAdminDb()
-          .collection("users")
-          .doc(uid)
+          .collection("paidCustomers")
+          .doc(paidCustomerKey(payerEmail))
           .set(
             {
-              isPaying: true,
-              plan: (session.metadata?.plan as string | undefined) ?? null,
-              stripeCustomerId:
-                typeof session.customer === "string"
-                  ? session.customer
-                  : session.customer?.id,
-              stripeSubscriptionId:
-                typeof session.subscription === "string"
-                  ? session.subscription
-                  : session.subscription?.id,
+              email: payerEmail.toLowerCase(),
+              plan,
+              stripeCustomerId,
+              stripeSubscriptionId,
               stripeStatus: "active",
-              subscribedAt: FieldValue.serverTimestamp(),
+              paidAt: FieldValue.serverTimestamp(),
             },
             { merge: true }
           );

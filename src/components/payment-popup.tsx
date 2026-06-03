@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -111,36 +111,29 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [signInLoading, setSignInLoading] = useState(false);
   const [error, setError] = useState("");
+  const [justPaid, setJustPaid] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paid") === "1") setJustPaid(true);
+  }, []);
 
   const price = plan === "yearly" ? "£200" : "£29";
   const period = plan === "yearly" ? "/yr" : "/mo";
-
-  async function ensureSignedIn(): Promise<string | null> {
-    if (!user) {
-      try {
-        await signIn();
-      } catch {
-        return null;
-      }
-    }
-    return await getIdToken();
-  }
 
   async function handleCheckout() {
     if (checkoutLoading) return;
     setError("");
     setCheckoutLoading(true);
     try {
-      const token = await ensureSignedIn();
-      if (!token) {
-        setError("Sign in to subscribe.");
-        return;
-      }
+      // Pay first — no account required. Link to an existing account only if
+      // the visitor already happens to be signed in.
+      const token = user ? await getIdToken() : null;
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ plan }),
       });
@@ -171,7 +164,10 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
         setError("Sign-in failed. Try again.");
         return;
       }
-      const res = await fetch("/api/users/me", {
+      // init creates the account, links any subscription paid for beforehand,
+      // and reports whether this account is now active.
+      const res = await fetch("/api/users/init", {
+        method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -200,6 +196,20 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
     >
       <div className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto animate-fade-in">
         <div className="p-6 md:p-10">
+          {justPaid && !user && (
+            <div className="mb-6 rounded-lg border border-green-700/40 bg-green-700/5 p-4">
+              <p
+                className="text-sm font-semibold"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                Payment received.
+              </p>
+              <p className="text-sm text-muted mt-1">
+                Sign in with the email you paid with to unlock The Long View.
+              </p>
+            </div>
+          )}
+
           {/* Hero */}
           <p className="text-xs tracking-widest uppercase text-muted mb-3">
             {dateLabel}

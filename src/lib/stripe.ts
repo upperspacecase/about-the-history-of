@@ -28,3 +28,9 @@ export function getPriceId(plan: Plan): string {
   }
   return id;
 }
+
+// Stable Firestore doc id for a payer's email, so a pay-first subscription can
+// be linked to the account they create afterward.
+export function paidCustomerKey(email: string): string {
+  return Buffer.from(email.toLowerCase()).toString("base64url");
+}
