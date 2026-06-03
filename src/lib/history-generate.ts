@@ -1,57 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { HistoryResponse } from "@/lib/history-types";
-
-export const SYSTEM_PROMPT = `You are a historian and analyst. Given a news headline, provide a structured historical analysis of the underlying topic.
-
-Your response must be valid JSON with this exact structure:
-{
-  "truthHeadline": "A single rewritten headline (max 120 characters, eighth-grade reading level or simpler) that states the deeper truth and historical context behind the original — what is *really* going on, beyond the surface framing. Write it as a real headline, not a description.",
-  "significance": 7,
-  "significanceReason": "One sentence (max 140 characters) explaining the score in historical terms. What makes this consequential — or trivial — given the timeline and patterns above?",
-  "topic": "The core historical topic extracted from the headline (e.g. 'U.S. Federal Reserve Interest Rate Policy')",
-  "summary": "A 2-3 sentence overview connecting the headline to its deeper historical roots. Write in a clear, authoritative editorial voice.",
-  "timeline": [
-    {
-      "year": "Year or date range (e.g. '1944', '1960s', '1971-1973')",
-      "title": "Short event title",
-      "description": "1-2 sentence description of this event and its significance",
-      "link": "A Wikipedia URL for further reading on this specific event (use the most specific article available)"
-    }
-  ],
-  "patterns": [
-    {
-      "title": "Short pattern name (e.g. 'Boom-Bust Cycles')",
-      "description": "1-2 sentences explaining this recurring pattern and how it connects to the headline"
-    }
-  ],
-  "furtherReading": [
-    {
-      "title": "Title of a well-known book, documentary, or long-form article on this topic",
-      "author": "Author name",
-      "type": "book | documentary | article",
-      "link": "A Wikipedia URL for the book/documentary, or a well-known publication URL for articles"
-    }
-  ],
-  "whyItMattersNow": "2-3 sentences explaining why the historical context makes today's headline more meaningful. What pattern is repeating? What precedent should we be watching?"
-}
-
-Guidelines:
-- The truthHeadline should reframe the original in light of the historical record — make the unspoken context legible. Keep it punchy and headline-shaped, never a sentence with a period at the end unless punctuation is integral. Write it at an eighth-grade reading level or simpler: short common words, plain phrasing, no jargon, no Latinate buzzwords. If a reader could be a thirteen-year-old, they should understand it.
-- The significance score is an integer from 1 to 10 measuring how consequential this story is in the grander historical scheme — judged AFTER you've written the timeline and patterns. Anchor your score:
-  - 1-2: Trivial. Celebrity gossip, sports results with no broader stakes, fluff.
-  - 3-4: Routine news. Local incidents, ordinary corporate moves, predictable political theater.
-  - 5-6: Notable. A meaningful policy shift, a credible leadership change, a tech release that nudges an industry.
-  - 7-8: Consequential. A development likely to be cited in this decade's history — major elections, sustained crises, landmark legal rulings, sizable wars or economic shocks.
-  - 9-10: Generational/historic. The kind of event that reshapes the order — the start or end of an era. Use sparingly.
-  - Be honest. Most news is 3-5. Reserve 8+ for events that genuinely belong in the timeline you just wrote.
-- Include 6-10 timeline events, ordered chronologically
-- Include 3-4 recurring patterns
-- Include 3-5 further reading recommendations
-- Be specific with dates, names, and facts
-- For links, use Wikipedia URLs (https://en.wikipedia.org/wiki/Article_Name) — they are stable and accessible
-- Focus on the most significant and illuminating historical events
-- Write clearly for a general audience in an editorial news voice
-- Return ONLY the JSON object, no other text`;
+import { RESEARCH_PROMPT } from "@/lib/research-prompt";
 
 export interface HistoryDoc
   extends Required<
@@ -73,7 +22,7 @@ export async function generateHistory(headline: string): Promise<HistoryDoc> {
   const message = await client.messages.create({
     model: "claude-sonnet-4-5",
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: RESEARCH_PROMPT,
     messages: [{ role: "user", content: `News headline: "${headline}"` }],
   });
 

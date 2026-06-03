@@ -44,6 +44,17 @@ const BRIEFING_FEATURES = [
   "Searchable archive — precedent for any headline",
 ];
 
+const SOURCES = [
+  "BBC",
+  "New York Times",
+  "CNN",
+  "Washington Post",
+  "Wall Street Journal",
+  "Al Jazeera",
+  "NPR",
+  "TechCrunch",
+];
+
 function Check() {
   return (
     <svg
@@ -292,6 +303,14 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
                   </li>
                 ))}
               </ul>
+              <div className="mt-5 border-t border-border pt-4">
+                <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted mb-2">
+                  Drawn from
+                </p>
+                <p className="text-xs text-muted leading-relaxed">
+                  {SOURCES.join(" · ")}
+                </p>
+              </div>
             </div>
 
             {/* The Intelligence Briefing — coming soon */}

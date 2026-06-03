@@ -3,9 +3,6 @@
 import { useEffect, useState } from "react";
 import { SignificanceDots } from "@/components/significance-dots";
 
-const PREVIEW_HEADLINE =
-  "Musk Lawyer’s Question for Sam Altman on the Stand: Are You Trustworthy?";
-
 interface TimelineEvent {
   year: string;
   title: string;
@@ -45,7 +42,7 @@ export function ExampleStory() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/history?headline=${encodeURIComponent(PREVIEW_HEADLINE)}`)
+    fetch("/api/top-story")
       .then(async (res) => {
         if (cancelled) return;
         if (!res.ok) {
@@ -92,12 +89,14 @@ export function ExampleStory() {
       </p>
 
       <div className="space-y-2">
-        <h3
-          className="text-xl md:text-2xl font-bold leading-[1.15] tracking-tight line-through text-muted decoration-muted/60"
-          style={{ fontFamily: "var(--font-serif)" }}
-        >
-          {PREVIEW_HEADLINE}
-        </h3>
+        {result.headline && (
+          <h3
+            className="text-xl md:text-2xl font-bold leading-[1.15] tracking-tight line-through text-muted decoration-muted/60"
+            style={{ fontFamily: "var(--font-serif)" }}
+          >
+            {result.headline}
+          </h3>
+        )}
         {result.truthHeadline && (
           <h3
             className="text-xl md:text-2xl font-bold leading-[1.15] tracking-tight text-green-700 dark:text-green-500"
