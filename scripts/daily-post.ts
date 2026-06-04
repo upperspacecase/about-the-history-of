@@ -13,6 +13,9 @@ import type { Headline } from "../src/lib/feeds";
 
 const POOL_SIZE = 12;
 const POST_COUNT = 3;
+// Render + upload the reels but skip Instagram + email. Set on a manual run to
+// preview the day's output, or as a kill-switch.
+const DRY_RUN = process.env.DRY_RUN === "1" || process.env.DRY_RUN === "true";
 
 async function main() {
   const db = getAdminDb();
@@ -60,6 +63,14 @@ async function main() {
       const blobUrl = await uploadAsset(outPath, `reels/${dateKey}/${id}.mp4`);
 
       const { igCaption } = buildCaption(doc);
+
+      if (DRY_RUN) {
+        posted += 1;
+        console.log(`[dry-run] Reel ready, not posted: ${blobUrl}`);
+        console.log(`[dry-run] Caption:\n${igCaption}\n`);
+        continue;
+      }
+
       const ids = await publishReel({ videoUrl: blobUrl, igCaption });
 
       if (!ids.instagramMediaId) {
@@ -91,11 +102,17 @@ async function main() {
     significance: doc.significance,
     significanceReason: doc.significanceReason,
   }));
-  try {
-    const { sent, failed } = await sendDailyDigest(digestStories);
-    console.log(`Digest sent to ${sent} subscriber(s); ${failed} failed.`);
-  } catch (err) {
-    console.error("Digest send error:", err);
+  if (DRY_RUN) {
+    console.log(
+      `[dry-run] Would send digest for ${digestStories.length} story(ies); skipped.`
+    );
+  } else {
+    try {
+      const { sent, failed } = await sendDailyDigest(digestStories);
+      console.log(`Digest sent to ${sent} subscriber(s); ${failed} failed.`);
+    } catch (err) {
+      console.error("Digest send error:", err);
+    }
   }
 
   try {
@@ -107,7 +124,9 @@ async function main() {
 
   const skippedAlreadyPosted = stories.length - fresh.length;
   console.log(
-    `Done. Posted ${posted}/${selected.length}; skipped ${skippedAlreadyPosted} already-posted.`
+    `Done${DRY_RUN ? " (dry-run)" : ""}. ` +
+      `${DRY_RUN ? "Rendered" : "Posted"} ${posted}/${selected.length}; ` +
+      `skipped ${skippedAlreadyPosted} already-posted.`
   );
 }
 

@@ -8,7 +8,12 @@ on:
     # in winter this lands ~7:15am ET / ~12:15pm London. To optimise for the
     # London morning + digest email instead, use 07:30 UTC (~8:45am London).
     - cron: "0 12 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Render + upload reels but do NOT post to Instagram or send email"
+        type: boolean
+        default: false
 
 jobs:
   daily-post:
@@ -39,3 +44,4 @@ jobs:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DRY_RUN: ${{ inputs.dry_run }}
