@@ -1,5 +1,5 @@
 import { AbsoluteFill, staticFile } from "remotion";
-import { ShareCard } from "../src/components/share-card";
+import { AnimatedTitleCard } from "./AnimatedTitleCard";
 import { ShareSafeFrame } from "../src/components/share-safe-frame";
 import type { HistoryResponse } from "../src/lib/history-types";
 
@@ -9,17 +9,17 @@ export type ReelProps = {
 };
 
 /**
- * The daily Reel: the real "Headline" share card, held static and inset into
- * the shared 9:16 safe frame (same as the downloadable cards).
+ * The daily Reel: the "Headline" share card, animated — the original headline
+ * types in, gets struck through, then the truth headline types in — and held
+ * on a final frame identical to the static downloadable card, inset into the
+ * shared 9:16 safe frame.
  */
 export const Reel = ({ doc, source }: ReelProps) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#faf9f6" }}>
       <ShareSafeFrame>
-        <ShareCard
-          variant="title"
-          data={doc}
-          headline={doc.headline}
+        <AnimatedTitleCard
+          doc={doc}
           source={source}
           logoSrc={staticFile("logo.png")}
         />

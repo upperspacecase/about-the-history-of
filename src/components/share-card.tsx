@@ -29,7 +29,7 @@ export const SHARE_CARD_HEIGHT = 1920;
 
 // Brand tokens, fixed to the light theme so cards look identical regardless of
 // the viewer's OS theme (globals.css flips these vars in dark mode).
-const C = {
+export const C = {
   bg: "#faf9f6",
   fg: "#111111",
   accent: "#c0392b",
@@ -41,8 +41,8 @@ const C = {
 };
 
 // System fonts only — keeps image rasterization deterministic (no web fonts).
-const SERIF = 'Georgia, "Times New Roman", serif';
-const SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+export const SERIF = 'Georgia, "Times New Roman", serif';
+export const SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
 
 // Height reserved for the green story title on the non-headline cards.
 const TITLE_REGION: Record<"timeline" | "patterns" | "matters", number> = {
