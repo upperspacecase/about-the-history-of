@@ -9,17 +9,16 @@ import {
 } from "../src/components/share-card";
 import type { HistoryResponse } from "../src/lib/history-types";
 
-// Animation beats at 30fps (the composition is 232 frames ≈ 7.7s). The final
-// held state is pixel-identical to the static ShareCard "title" variant.
-const T1_START = 10;
-const T1_DUR = 42; // original headline types out: 10 → 52
-const STRIKE_START = 66;
-const STRIKE_DUR = 12; // crossed out: 66 → 78
-const CRIT_START = 84;
-const CRIT_DUR = 12; // "The Long View Critique" label fades in: 84 → 96
-const T2_START = 96;
-const T2_DUR = 50; // truth headline types out: 96 → 146
-// 146 → end: hold on the finished card.
+// Animation beats at 30fps (the composition is 384 frames ≈ 12.8s).
+const T1_START = 20;
+const T1_DUR = 84; // original headline types out: 20 → 104
+const STRIKE_START = 132;
+const STRIKE_DUR = 24; // crossed out: 132 → 156
+const CRIT_START = 168;
+const CRIT_DUR = 24; // "The Long View Critique" label fades in: 168 → 192
+const T2_START = 192;
+const T2_DUR = 100; // truth headline types out: 192 → 292
+// 292 → end: hold on the finished card.
 
 function Kicker({
   children,
@@ -66,7 +65,7 @@ function TypedHeadline({
     <div
       style={{
         fontFamily: SERIF,
-        fontSize: 74,
+        fontSize: 84,
         fontWeight: 700,
         lineHeight: 1.14,
       }}
@@ -134,7 +133,7 @@ export const AnimatedTitleCard = ({
   // strike; then moves to the truth headline while that types.
   const origCaret = frame < STRIKE_START ? caretBlink : null;
   const truthCaret =
-    frame >= T2_START && frame < T2_START + T2_DUR + 6 ? caretBlink : null;
+    frame >= T2_START && frame < T2_START + T2_DUR ? caretBlink : null;
 
   return (
     <div

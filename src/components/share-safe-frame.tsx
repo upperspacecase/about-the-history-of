@@ -6,9 +6,17 @@ import type { ReactNode } from "react";
 // card background, so the margins read as intentional padding.
 const SAFE_TOP = 230;
 const SAFE_BOTTOM = 410;
-const SCALE = (1920 - SAFE_TOP - SAFE_BOTTOM) / 1920;
 
-export function ShareSafeFrame({ children }: { children: ReactNode }) {
+export function ShareSafeFrame({
+  children,
+  top = SAFE_TOP,
+  bottom = SAFE_BOTTOM,
+}: {
+  children: ReactNode;
+  top?: number;
+  bottom?: number;
+}) {
+  const scale = (1920 - top - bottom) / 1920;
   return (
     <div
       style={{
@@ -22,9 +30,9 @@ export function ShareSafeFrame({ children }: { children: ReactNode }) {
       <div
         style={{
           position: "absolute",
-          top: SAFE_TOP,
+          top,
           left: "50%",
-          transform: `translateX(-50%) scale(${SCALE})`,
+          transform: `translateX(-50%) scale(${scale})`,
           transformOrigin: "top center",
         }}
       >

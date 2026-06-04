@@ -175,10 +175,11 @@ export async function sendDailyDigestEmail({
     .map((s) => {
       const link = `${site}/history?headline=${encodeURIComponent(s.headline)}`;
       return `
-        <tr><td style="padding:0 0 26px;">
-          <p style="font-size:13px;letter-spacing:0.16em;text-transform:uppercase;color:#15803d;margin:0 0 6px;font-family:${sans};">Significance ${s.significance}/10</p>
-          <a href="${link}" style="font-size:21px;line-height:1.3;font-weight:700;color:#111;text-decoration:none;">${s.truthHeadline}</a>
-          <p style="font-size:15px;line-height:1.5;color:#555;margin:8px 0 10px;">${s.significanceReason}</p>
+        <tr><td style="padding:0 0 28px;">
+          <p style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#c0392b;margin:0 0 8px;font-family:${sans};">Significance ${s.significance}/10</p>
+          <p style="font-size:21px;line-height:1.3;font-weight:700;color:#6b6b6b;text-decoration:line-through;margin:0 0 4px;">${s.headline}</p>
+          <a href="${link}" style="display:block;font-size:22px;line-height:1.3;font-weight:700;color:#15803d;text-decoration:none;margin:0 0 8px;">${s.truthHeadline}</a>
+          <p style="font-size:15px;line-height:1.5;color:#555;margin:0 0 10px;">${s.significanceReason}</p>
           <a href="${link}" style="font-size:14px;color:#c0392b;text-decoration:none;font-weight:600;font-family:${sans};">Read the history &rarr;</a>
         </td></tr>`;
     })
@@ -208,7 +209,7 @@ export async function sendDailyDigestEmail({
     stories
       .map(
         (s) =>
-          `[${s.significance}/10] ${s.truthHeadline}\n${s.significanceReason}\n${site}/history?headline=${encodeURIComponent(s.headline)}`
+          `Significance ${s.significance}/10\n${s.headline}\n↳ ${s.truthHeadline}\n${s.significanceReason}\n${site}/history?headline=${encodeURIComponent(s.headline)}`
       )
       .join("\n\n") +
     `\n\n— The Long View · thelongview.org · 129 Pritchards Rd, London, UK\nUnsubscribe: ${unsubscribeUrl}`;
