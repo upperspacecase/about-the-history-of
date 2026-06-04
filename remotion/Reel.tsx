@@ -17,7 +17,7 @@ export type ReelProps = {
 export const Reel = ({ doc, source }: ReelProps) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#faf9f6" }}>
-      <ShareSafeFrame top={190} bottom={270}>
+      <ShareSafeFrame>
         <AnimatedTitleCard
           doc={doc}
           source={source}

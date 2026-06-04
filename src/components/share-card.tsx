@@ -236,7 +236,7 @@ export function ShareCard({
             <div
               style={{
                 fontFamily: SERIF,
-                fontSize: 74,
+                fontSize: 84,
                 fontWeight: 700,
                 lineHeight: 1.14,
                 color: C.muted,
@@ -254,7 +254,7 @@ export function ShareCard({
             <div
               style={{
                 fontFamily: SERIF,
-                fontSize: 74,
+                fontSize: 84,
                 fontWeight: 700,
                 lineHeight: 1.14,
                 color: C.truth,
@@ -269,7 +269,7 @@ export function ShareCard({
             <div
               style={{
                 fontFamily: SERIF,
-                fontSize: 74,
+                fontSize: 84,
                 fontWeight: 700,
                 lineHeight: 1.14,
                 color: C.fg,

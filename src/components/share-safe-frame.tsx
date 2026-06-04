@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 // bottom (~caption/reply/buttons) of a post. Scale a 1080x1920 card into this
 // safe band so its masthead and footer stay clear. The cream frame matches the
 // card background, so the margins read as intentional padding.
-const SAFE_TOP = 230;
-const SAFE_BOTTOM = 410;
+const SAFE_TOP = 190;
+const SAFE_BOTTOM = 270;
 
 export function ShareSafeFrame({
   children,
