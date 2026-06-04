@@ -2,13 +2,12 @@ name: Daily Reels
 
 on:
   schedule:
-    # 07:30 UTC. The pipeline takes ~10-25 min to go live, so content publishes
-    # ~8:45am London (BST) — fresh for the London morning and the digest email —
-    # and is already up (~3:45am ET), waiting before New York wakes. GitHub cron
-    # is fixed UTC and ignores DST: in winter this lands ~7:45am London / ~2:45am
-    # ET. To optimise for the larger US Instagram audience instead, use 12:00 UTC
-    # (~8am ET fresh / ~1pm London).
-    - cron: "30 7 * * *"
+    # 12:00 UTC. The pipeline takes ~10-25 min to go live, so content publishes
+    # ~8:15am ET — fresh for New York's morning and the larger US Instagram
+    # audience — and ~1:15pm London. GitHub cron is fixed UTC and ignores DST:
+    # in winter this lands ~7:15am ET / ~12:15pm London. To optimise for the
+    # London morning + digest email instead, use 07:30 UTC (~8:45am London).
+    - cron: "0 12 * * *"
   workflow_dispatch: {}
 
 jobs:
