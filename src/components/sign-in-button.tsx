@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/firebase/auth-context";
+import { trackClick } from "@/lib/track";
 
 export function SignInButton() {
   const { user, loading, signIn, signOut } = useAuth();
@@ -23,7 +24,10 @@ export function SignInButton() {
 
   return (
     <button
-      onClick={() => signIn()}
+      onClick={() => {
+        trackClick("signin");
+        signIn();
+      }}
       className="text-xs font-medium text-accent hover:underline"
     >
       Sign in with Google

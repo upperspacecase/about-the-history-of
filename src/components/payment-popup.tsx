@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { trackClick } from "@/lib/track";
 import { ExampleStory } from "./example-story";
 import { EmailCapture } from "@/components/email-capture";
 
@@ -123,6 +124,7 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
 
   async function handleCheckout() {
     if (checkoutLoading) return;
+    trackClick("checkout");
     setError("");
     setCheckoutLoading(true);
     try {
@@ -155,6 +157,7 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
 
   async function handleSignIn() {
     if (signInLoading) return;
+    trackClick("signin");
     setError("");
     setSignInLoading(true);
     try {

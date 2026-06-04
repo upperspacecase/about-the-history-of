@@ -1,0 +1,58 @@
+name: Weekly Report
+
+on:
+  schedule:
+    # Sundays 14:00 UTC — after that day's 13:00 insights collection.
+    - cron: "0 14 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+
+      - id: report
+        run: npx tsx scripts/weekly-insights.ts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+
+      - name: Open report PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WEEK="${{ steps.report.outputs.week }}"
+          if [ -z "$WEEK" ]; then
+            echo "No week output from the script; skipping PR."
+            exit 0
+          fi
+          BRANCH="weekly-report/${WEEK}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add docs/weekly-reports
+          if git diff --cached --quiet; then
+            echo "No report changes to commit."
+            exit 0
+          fi
+          git commit -m "Weekly report ${WEEK}"
+          git push -u origin "$BRANCH" --force
+          gh pr create \
+            --base main --head "$BRANCH" \
+            --title "Weekly report ${WEEK}" \
+            --body "Automated weekly marketing report. Review the recommendations, then use the Apply button on the admin dashboard to have the agent open a code-change PR." \
+            || echo "PR already exists for ${BRANCH}."
