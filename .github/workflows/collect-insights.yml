@@ -1,0 +1,30 @@
+name: Collect Insights
+
+on:
+  schedule:
+    # 13:00 UTC — ~1h after the daily post (12:00 UTC) so the day's Reels have
+    # started accruing views. The collector re-reads the last ~14 days each run,
+    # so it also absorbs Instagram's up-to-48h insights lag.
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+
+jobs:
+  collect-insights:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npx tsx scripts/collect-insights.ts
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}

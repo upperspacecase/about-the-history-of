@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { trackClick } from "@/lib/track";
 
 /** Reusable email capture form. Posts to /api/subscribe with an optional source tag. */
 export function EmailCapture({
@@ -24,6 +25,7 @@ export function EmailCapture({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (status === "loading") return;
+    trackClick("subscribe");
     setStatus("loading");
     try {
       const res = await fetch("/api/subscribe", {

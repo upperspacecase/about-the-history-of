@@ -1,0 +1,67 @@
+name: Apply Recommendations
+
+# Manually dispatched — from the terminal (`gh workflow run apply-recommendations.yml`)
+# or the GitHub Actions UI. Runs the bounded editor over caption.ts +
+# AnimatedTitleCard.tsx, typechecks the result, and opens a PR. Never pushes to
+# main. To apply locally instead: `npx tsx scripts/apply-recommendations.ts [week]`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      week:
+        description: "Weekly report id (e.g. 2026-W23). Blank = latest."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+
+      - id: apply
+        run: npx tsx scripts/apply-recommendations.ts
+        env:
+          APPLY_WEEK: ${{ inputs.week }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+
+      - name: Typecheck the edits
+        if: steps.apply.outputs.changed != '0' && steps.apply.outputs.changed != ''
+        run: npx tsc --noEmit
+
+      - name: Open change PR
+        if: steps.apply.outputs.changed != '0' && steps.apply.outputs.changed != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WEEK="${{ steps.apply.outputs.week }}"
+          BRANCH="apply/${WEEK}-${{ github.run_id }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          # Restrict the commit to exactly the two marketing files.
+          git add src/lib/caption.ts remotion/AnimatedTitleCard.tsx
+          if git diff --cached --quiet; then
+            echo "No changes to the marketing files."
+            exit 0
+          fi
+          git commit -m "Apply ${WEEK} recommendations to caption + reel card"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --base main --head "$BRANCH" \
+            --title "Apply ${WEEK} recommendations" \
+            --body "Agent-applied edits to the caption builder and/or reel card from the ${WEEK} weekly report. Auto-typechecked. **Review before merging** — this is a generated change."

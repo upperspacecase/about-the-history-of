@@ -10,7 +10,7 @@ const GRAPH = `https://graph.facebook.com/${API_VERSION}`;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-function requireEnv(name: string): string {
+export function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required env var: ${name}`);
   return value;
@@ -33,7 +33,7 @@ async function parseGraph<T>(res: Response): Promise<T> {
   return json as T;
 }
 
-async function graphGet<T>(
+export async function graphGet<T>(
   pathname: string,
   params: Record<string, string>,
   token: string,
