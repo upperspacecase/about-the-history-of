@@ -222,3 +222,24 @@ export async function sendDailyDigestEmail({
     text,
   });
 }
+
+/**
+ * Operational run report for the daily pipeline. Sends to a single operator
+ * address (never the subscriber list). Plain text — it's an internal alert.
+ */
+export async function sendRunReport({
+  to,
+  subject,
+  body,
+}: {
+  to: string;
+  subject: string;
+  body: string;
+}) {
+  const resend = client();
+  if (!resend) {
+    console.warn("RESEND_API_KEY missing — skipping run report");
+    return;
+  }
+  await resend.emails.send({ from: FROM, to, subject, text: body });
+}

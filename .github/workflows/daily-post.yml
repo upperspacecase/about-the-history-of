@@ -44,4 +44,5 @@ jobs:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          OPS_EMAIL: ${{ secrets.OPS_EMAIL }}
           DRY_RUN: ${{ inputs.dry_run }}

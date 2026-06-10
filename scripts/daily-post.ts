@@ -9,6 +9,7 @@ import { renderReel } from "./lib/render-reel";
 import { uploadAsset, cleanupOldBlobs } from "./lib/upload-asset";
 import { publishReel } from "./lib/meta-publish";
 import { sendDailyDigest } from "../src/lib/digest";
+import { sendRunReport } from "../src/lib/resend";
 import type { Headline } from "../src/lib/feeds";
 
 const POOL_SIZE = 12;
@@ -53,6 +54,7 @@ async function main() {
   const selected = fresh.slice(0, POST_COUNT);
 
   let posted = 0;
+  const failures: string[] = [];
   for (const { candidate, doc } of selected) {
     const id = headlineKey(candidate.title);
     try {
@@ -74,7 +76,9 @@ async function main() {
       const ids = await publishReel({ videoUrl: blobUrl, igCaption });
 
       if (!ids.instagramMediaId) {
-        console.error(`Failed to post "${candidate.title}": ${ids.errors.join("; ")}`);
+        const msg = `Failed to post "${candidate.title}": ${ids.errors.join("; ")}`;
+        console.error(msg);
+        failures.push(msg);
         continue;
       }
 
@@ -92,7 +96,9 @@ async function main() {
           (ids.errors.length ? ` [errors: ${ids.errors.join("; ")}]` : "")
       );
     } catch (err) {
-      console.error(`Failed to post "${candidate.title}":`, err);
+      const msg = `Failed to post "${candidate.title}": ${err instanceof Error ? err.message : String(err)}`;
+      console.error(msg);
+      failures.push(msg);
     }
   }
 
@@ -128,6 +134,37 @@ async function main() {
       `${DRY_RUN ? "Rendered" : "Posted"} ${posted}/${selected.length}; ` +
       `skipped ${skippedAlreadyPosted} already-posted.`
   );
+
+  // Email the run outcome to the operator. Single recipient from OPS_EMAIL
+  // (never the subscriber list). Sent on every scheduled run so a silent day
+  // or an error both stand out in the inbox.
+  const opsEmail = process.env.OPS_EMAIL;
+  if (opsEmail && !DRY_RUN) {
+    const failed = selected.length > 0 && posted === 0;
+    const subject = failed
+      ? `[Long View] FAILED — 0/${selected.length} posted`
+      : `[Long View] posted ${posted}/${selected.length}`;
+    const lines = [
+      `Posted ${posted}/${selected.length} reel(s) to Instagram.`,
+      `Skipped ${skippedAlreadyPosted} already-posted.`,
+    ];
+    if (failures.length) lines.push("", "Failures:", ...failures);
+    try {
+      await sendRunReport({ to: opsEmail, subject, body: lines.join("\n") });
+      console.log("Run report emailed to operator.");
+    } catch (err) {
+      console.error("Run report email failed:", err);
+    }
+  }
+
+  // Fail the run (red CI + failure notification) when nothing reached Instagram
+  // despite having stories to post. The digest and cleanup above still ran.
+  if (!DRY_RUN && selected.length > 0 && posted === 0) {
+    throw new Error(
+      `Instagram publishing failed for all ${selected.length} reel(s) — nothing posted.\n` +
+        failures.join("\n")
+    );
+  }
 }
 
 main().catch((err) => {
