@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { interpolate, useCurrentFrame } from "remotion";
+import { useCurrentFrame } from "remotion";
 import {
   C,
   SANS,
@@ -9,25 +9,12 @@ import {
 } from "../src/components/share-card";
 import type { HistoryResponse } from "../src/lib/history-types";
 
-// Animation beats at 30fps (the composition is 384 frames ≈ 12.8s).
-const T1_START = 20;
-const T1_DUR = 84; // original headline types out: 20 → 104
-const STRIKE_START = 132;
-const STRIKE_DUR = 24; // crossed out: 132 → 156
-const CRIT_START = 168;
-const CRIT_DUR = 24; // "The Long View Critique" label fades in: 168 → 192
-const T2_START = 192;
-const T2_DUR = 100; // truth headline types out: 192 → 292
-// 292 → end: hold on the finished card.
-
 function Kicker({
   children,
   color = C.muted,
-  opacity = 1,
 }: {
   children: ReactNode;
   color?: string;
-  opacity?: number;
 }) {
   return (
     <div
@@ -38,7 +25,6 @@ function Kicker({
         letterSpacing: "0.22em",
         textTransform: "uppercase",
         color,
-        opacity,
       }}
     >
       {children}
@@ -46,20 +32,18 @@ function Kicker({
   );
 }
 
-// A headline that types in. The untyped tail is rendered transparent so the
-// card's wrap and vertical centering never shift as characters appear.
-function TypedHeadline({
+// A headline shown in full. Optionally struck through, with an optional
+// blinking caret rendered at the end.
+function Headline({
   text,
-  shown,
   color,
-  strikeAlpha,
-  caret,
+  struck = false,
+  caret = null,
 }: {
   text: string;
-  shown: number;
   color: string;
-  strikeAlpha: number;
-  caret: number | null;
+  struck?: boolean;
+  caret?: number | null;
 }) {
   return (
     <div
@@ -73,17 +57,16 @@ function TypedHeadline({
       <span
         style={{
           color,
-          textDecorationLine: strikeAlpha > 0 ? "line-through" : "none",
-          textDecorationColor: `rgba(107,107,107,${strikeAlpha})`,
+          textDecorationLine: struck ? "line-through" : "none",
+          textDecorationColor: "rgba(107,107,107,0.55)",
           textDecorationThickness: "4px",
         }}
       >
-        {text.slice(0, shown)}
+        {text}
       </span>
       {caret !== null && (
         <span style={{ color, opacity: caret, fontWeight: 400 }}>|</span>
       )}
-      <span style={{ color: "transparent" }}>{text.slice(shown)}</span>
     </div>
   );
 }
@@ -103,37 +86,9 @@ export const AnimatedTitleCard = ({
   const headline = doc.headline;
   const truth = doc.truthHeadline?.trim() ?? "";
 
-  const clampOpts = {
-    extrapolateLeft: "clamp" as const,
-    extrapolateRight: "clamp" as const,
-  };
-
-  const origShown = Math.round(
-    interpolate(frame, [T1_START, T1_START + T1_DUR], [0, headline.length], clampOpts)
-  );
-  const strike = interpolate(
-    frame,
-    [STRIKE_START, STRIKE_START + STRIKE_DUR],
-    [0, 1],
-    clampOpts
-  );
-  const grey = Math.round(interpolate(strike, [0, 1], [17, 107]));
-  const critOpacity = interpolate(
-    frame,
-    [CRIT_START, CRIT_START + CRIT_DUR],
-    [0, 1],
-    clampOpts
-  );
-  const truthShown = Math.round(
-    interpolate(frame, [T2_START, T2_START + T2_DUR], [0, truth.length], clampOpts)
-  );
-
+  // The card holds its finished state for the whole Reel; the only motion is a
+  // blinking caret at the end of the truth headline.
   const caretBlink = Math.floor(frame / 9) % 2 === 0 ? 1 : 0.2;
-  // Caret rides the original while it types and during the pause before the
-  // strike; then moves to the truth headline while that types.
-  const origCaret = frame < STRIKE_START ? caretBlink : null;
-  const truthCaret =
-    frame >= T2_START && frame < T2_START + T2_DUR ? caretBlink : null;
 
   return (
     <div
@@ -214,27 +169,13 @@ export const AnimatedTitleCard = ({
             </div>
           ) : null}
 
-          <TypedHeadline
-            text={headline}
-            shown={origShown}
-            color={`rgb(${grey},${grey},${grey})`}
-            strikeAlpha={0.55 * strike}
-            caret={origCaret}
-          />
+          <Headline text={headline} color={C.muted} struck />
 
           <div style={{ marginTop: 40 }}>
-            <Kicker color={C.accent} opacity={critOpacity}>
-              The Long View Critique
-            </Kicker>
+            <Kicker color={C.accent}>The Long View Critique</Kicker>
           </div>
           <div style={{ marginTop: 14 }}>
-            <TypedHeadline
-              text={truth}
-              shown={truthShown}
-              color={C.truth}
-              strikeAlpha={0}
-              caret={truthCaret}
-            />
+            <Headline text={truth} color={C.truth} caret={caretBlink} />
           </div>
         </div>
       </div>
