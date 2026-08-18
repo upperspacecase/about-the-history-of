@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
-import { SignificanceDots } from "@/components/significance-dots";
+import { SignificanceLabel } from "@/components/significance-label";
 import { PaymentPopup } from "@/components/payment-popup";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CATEGORIES, type Category } from "@/lib/categories";
@@ -119,7 +119,7 @@ export default function Home() {
         firstSignIn = window.localStorage.getItem("lv_first_signin") === "1";
         if (firstSignIn) window.localStorage.removeItem("lv_first_signin");
       } catch {
-        /* storage disabled — keep popup dismissed */
+        /* storage disabled; keep popup dismissed */
       }
       if (!cancelled) setPopupDismissed(!firstSignIn);
 
@@ -131,7 +131,7 @@ export default function Home() {
         const data = (await res.json()) as UserStatus;
         if (!cancelled) setUserStatus(data);
       } catch {
-        /* leave status null — popup just won't show */
+        /* leave status null; popup just won't show */
       }
     })();
     return () => {
@@ -140,7 +140,7 @@ export default function Home() {
   }, [user, getIdToken]);
 
   const isFreeTier = !!user && !!userStatus && !userStatus.isPaying;
-  // Logged-out: paywall always shows (no dismissal — preview link navigates away).
+  // Logged-out: paywall always shows (no dismissal; preview link navigates away).
   // Signed-in free tier: paywall shows once on first sign-in (auth-context sets the flag).
   const showPaywall = !user || (isFreeTier && !popupDismissed);
 
@@ -218,7 +218,7 @@ export default function Home() {
               The Long View
             </h1>
             <p className="text-sm text-muted">
-              Today&apos;s headlines. The history behind them.
+              Know what changed. Ignore what didn&apos;t.
             </p>
           </div>
         </div>
@@ -384,7 +384,7 @@ export default function Home() {
                     {h.source} / {h.category}
                   </span>
                   {typeof h.significance === "number" && (
-                    <SignificanceDots
+                    <SignificanceLabel
                       score={h.significance}
                       reason={h.significanceReason}
                     />
@@ -469,9 +469,12 @@ export default function Home() {
             &ldquo;History doesn&apos;t repeat itself, but it often
             rhymes.&rdquo;
           </p>
-          <p className="mt-2 text-xs">
-            Headlines sourced from public RSS feeds. Historical analysis powered
-            by Claude.
+          <p className="mt-2 text-xs max-w-2xl mx-auto">
+            The Long View is produced by an automated analysis system using
+            linked reporting and historical sources. Every story passes
+            automated sourcing, consistency, similarity, and confidence
+            checks. Analysis remains provisional and may be updated as
+            evidence changes.
           </p>
           <p className="mt-3 text-xs flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
             <Link

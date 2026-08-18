@@ -12,37 +12,31 @@ interface PaymentPopupProps {
   dateLabel: string;
 }
 
-type Plan = "yearly" | "monthly";
-
-const PRINCIPLES = [
+const VALUE_PROPS = [
   {
     icon: "/icons/history-rhyme.png",
-    title: "History doesn’t repeat but it does rhyme.",
-    body: "Every crisis has a precedent. The precedent usually hints at how this one ends.",
-  },
-  {
-    icon: "/icons/no-finish-line.png",
-    title: "Remember, there is no finish line.",
-    body: "Every era thinks it’s the last act. None has been.",
+    title: "Know what changed. Ignore what didn't.",
+    body: "Three stories each morning, ranked by historical significance. Never more.",
   },
   {
     icon: "/icons/signal-noise.png",
-    title: "Find signal in the noise.",
-    body: "Headlines describe. History explains.",
+    title: "A noise check, every day.",
+    body: "When a heavily covered story changes less than the coverage implies, we say so.",
+  },
+  {
+    icon: "/icons/no-finish-line.png",
+    title: "Under five minutes.",
+    body: "Calmer, clearer, appropriately informed before you start work.",
   },
 ];
 
-const READER_FEATURES = [
-  "Each headline reframed — the truth beneath the surface",
-  "Full timelines, patterns and precedent, per story",
-  "The complete daily archive",
-];
-
-const BRIEFING_FEATURES = [
-  "Ask the Historian — precedent for your decisions",
-  "A weekly operator briefing, tuned to your world",
-  "What to watch next, not only what happened",
-  "Searchable archive — precedent for any headline",
+const PLAN_FEATURES = [
+  "One morning email with up to three stories",
+  "A provisional significance judgment for every story",
+  "The closest historical precedent, and the crucial difference",
+  "What would raise or lower each judgment",
+  "A searchable web archive",
+  "Automatic updates when important evidence changes",
 ];
 
 const SOURCES = [
@@ -108,7 +102,6 @@ function GoogleLogo() {
 
 export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
   const { user, signIn, signOut, getIdToken } = useAuth();
-  const [plan, setPlan] = useState<Plan>("yearly");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [signInLoading, setSignInLoading] = useState(false);
   const [error, setError] = useState("");
@@ -119,16 +112,13 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
     if (params.get("paid") === "1") setJustPaid(true);
   }, []);
 
-  const price = plan === "yearly" ? "£200" : "£29";
-  const period = plan === "yearly" ? "/yr" : "/mo";
-
   async function handleCheckout() {
     if (checkoutLoading) return;
     trackClick("checkout");
     setError("");
     setCheckoutLoading(true);
     try {
-      // Pay first — no account required. Link to an existing account only if
+      // Pay first, no account required. Link to an existing account only if
       // the visitor already happens to be signed in.
       const token = user ? await getIdToken() : null;
       const res = await fetch("/api/stripe/checkout", {
@@ -137,7 +127,7 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan: "annual" }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         url?: string;
@@ -179,7 +169,7 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
       if (!data.isPaying) {
         await signOut();
         setError(
-          "Sign-in is only for active subscribers. Subscribe to access The Long View."
+          "Sign-in is only for active subscribers. Start a trial to access The Long View."
         );
         return;
       }
@@ -205,10 +195,11 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
                 className="text-sm font-semibold"
                 style={{ fontFamily: "var(--font-serif)" }}
               >
-                Payment received.
+                Your trial has started.
               </p>
               <p className="text-sm text-muted mt-1">
-                Sign in with the email you paid with to unlock The Long View.
+                Sign in with the email you used at checkout to unlock The Long
+                View.
               </p>
             </div>
           )}
@@ -222,16 +213,21 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
             className="text-3xl md:text-4xl font-bold leading-[1.1] tracking-tight"
             style={{ fontFamily: "var(--font-serif)" }}
           >
-            Today&apos;s Headlines, in Context
+            Not everything breaking is important.
           </h2>
           <p className="mt-4 text-sm md:text-base text-muted leading-relaxed max-w-2xl">
-            The Long View turns major headlines into short historical timelines —
-            the precedent, the pattern, and the story beneath the story.
+            The Long View ranks three stories each morning by historical
+            significance, so you can understand what changed and ignore what
+            didn&apos;t.
+          </p>
+          <p className="mt-2 text-sm text-muted leading-relaxed max-w-2xl">
+            A five-minute daily briefing for people who want to stay informed
+            without living in the news.
           </p>
 
-          {/* Principles */}
+          {/* Value props */}
           <ol className="mt-7 grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PRINCIPLES.map((p) => (
+            {VALUE_PROPS.map((p) => (
               <li key={p.icon} className="flex items-start gap-3">
                 <Image
                   src={p.icon}
@@ -254,69 +250,90 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
             ))}
           </ol>
 
-          {/* Pricing cards */}
-          <div className="mt-9 grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* The Daily Reader */}
+          {/* The one plan */}
+          <div className="mt-9 grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
             <div className="border border-border rounded-xl p-6 bg-card flex flex-col">
-              <div className="flex items-center justify-between gap-3">
-                <h3
-                  className="text-lg font-bold"
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  The Daily Reader
-                </h3>
-                <div className="inline-flex rounded-full border border-border bg-highlight p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setPlan("yearly")}
-                    className={
-                      plan === "yearly"
-                        ? "px-3 py-1 text-[11px] font-medium uppercase tracking-wider rounded-full bg-accent text-white"
-                        : "px-3 py-1 text-[11px] font-medium uppercase tracking-wider rounded-full text-muted hover:text-foreground transition-colors cursor-pointer"
-                    }
-                  >
-                    Yearly
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPlan("monthly")}
-                    className={
-                      plan === "monthly"
-                        ? "px-3 py-1 text-[11px] font-medium uppercase tracking-wider rounded-full bg-accent text-white"
-                        : "px-3 py-1 text-[11px] font-medium uppercase tracking-wider rounded-full text-muted hover:text-foreground transition-colors cursor-pointer"
-                    }
-                  >
-                    Monthly
-                  </button>
-                </div>
-              </div>
+              <h3
+                className="text-lg font-bold"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                The Daily Long View
+              </h3>
               <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-4xl font-bold tracking-tight">{price}</span>
-                <span className="text-sm text-muted">{period}</span>
-                {plan === "yearly" && (
-                  <span className="ml-1 text-xs text-accent font-semibold uppercase tracking-wider">
-                    Save 43%
-                  </span>
-                )}
+                <span className="text-4xl font-bold tracking-tight">$99</span>
+                <span className="text-sm text-muted">/year</span>
               </div>
+              <p className="mt-1 text-xs text-muted">
+                14-day free trial. Cancel anytime.
+              </p>
               <button
                 type="button"
                 onClick={handleCheckout}
                 disabled={checkoutLoading}
                 className="mt-5 w-full bg-accent text-white font-semibold py-2.5 rounded hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {checkoutLoading ? "Opening Stripe…" : "Subscribe with Stripe"}
+                {checkoutLoading
+                  ? "Opening Stripe…"
+                  : "Start your 14-day trial · $99/year"}
               </button>
-              <p className="mt-2 text-xs text-muted">Cancel anytime.</p>
               <ul className="mt-5 space-y-2.5 text-sm border-t border-border pt-5">
-                {READER_FEATURES.map((f) => (
+                {PLAN_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2.5">
                     <Check />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-5 border-t border-border pt-4">
+            </div>
+
+            <div className="flex flex-col gap-5">
+              <div className="border border-border rounded-xl p-6 bg-highlight">
+                <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted mb-2">
+                  Each morning, up to three stories
+                </p>
+                <ul className="space-y-3 text-sm">
+                  <li>
+                    <span
+                      className="font-semibold"
+                      style={{ fontFamily: "var(--font-serif)" }}
+                    >
+                      The shift.
+                    </span>{" "}
+                    <span className="text-muted">
+                      The event most likely to create durable change.
+                    </span>
+                  </li>
+                  <li>
+                    <span
+                      className="font-semibold"
+                      style={{ fontFamily: "var(--font-serif)" }}
+                    >
+                      The pattern.
+                    </span>{" "}
+                    <span className="text-muted">
+                      An important development following a recognisable
+                      historical mechanism.
+                    </span>
+                  </li>
+                  <li>
+                    <span
+                      className="font-semibold"
+                      style={{ fontFamily: "var(--font-serif)" }}
+                    >
+                      The noise check.
+                    </span>{" "}
+                    <span className="text-muted">
+                      A heavily covered event that currently changes less than
+                      the coverage implies.
+                    </span>
+                  </li>
+                </ul>
+                <p className="mt-4 text-xs text-muted leading-relaxed">
+                  On a quiet day you may get fewer than three. We would rather
+                  tell you nothing much happened than invent significance.
+                </p>
+              </div>
+              <div className="border border-border rounded-xl p-5 bg-card">
                 <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted mb-2">
                   Drawn from
                 </p>
@@ -324,46 +341,6 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
                   {SOURCES.join(" · ")}
                 </p>
               </div>
-            </div>
-
-            {/* The Intelligence Briefing — coming soon */}
-            <div className="border border-accent/30 rounded-xl p-6 bg-highlight flex flex-col">
-              <div className="flex items-center gap-2">
-                <h3
-                  className="text-lg font-bold"
-                  style={{ fontFamily: "var(--font-serif)" }}
-                >
-                  The Intelligence Briefing
-                </h3>
-                <span className="text-[10px] uppercase tracking-wider bg-accent text-white px-2 py-0.5 rounded-full font-semibold">
-                  Coming soon
-                </span>
-              </div>
-              <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-4xl font-bold tracking-tight">£300</span>
-                <span className="text-sm text-muted">/yr</span>
-              </div>
-              <p className="mt-1 text-xs text-muted">
-                For founders, investors and operators — be early, be right.
-              </p>
-              <div className="mt-4">
-                <EmailCapture
-                  source="briefing-waitlist"
-                  buttonLabel="Join the waitlist"
-                  doneMessage="You're on the waitlist. We'll email you when the Briefing opens."
-                />
-              </div>
-              <ul className="mt-5 space-y-2.5 text-sm border-t border-border pt-5">
-                <li className="text-xs font-medium uppercase tracking-wider text-muted">
-                  Everything in The Daily Reader, plus:
-                </li>
-                {BRIEFING_FEATURES.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5">
-                    <Check />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
 
@@ -422,6 +399,15 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
           <div className="border-t border-border mt-9 pt-6">
             <ExampleStory />
           </div>
+
+          {/* Transparency */}
+          <p className="mt-8 text-[11px] text-muted leading-relaxed border-t border-border pt-4">
+            The Long View is produced by an automated analysis system using
+            linked reporting and historical sources. Every story passes
+            automated sourcing, consistency, similarity, and confidence
+            checks. Analysis remains provisional and may be updated as
+            evidence changes.
+          </p>
         </div>
       </div>
     </div>

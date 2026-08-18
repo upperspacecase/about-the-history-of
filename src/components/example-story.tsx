@@ -1,42 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SignificanceDots } from "@/components/significance-dots";
+import { SignificanceLabel } from "@/components/significance-label";
+import { VerdictDetails } from "@/components/verdict-details";
+import type { HistoryResponse } from "@/lib/history-types";
 
-interface TimelineEvent {
-  year: string;
-  title: string;
-  description: string;
-  link: string;
-}
-
-interface Pattern {
-  title: string;
-  description: string;
-}
-
-interface FurtherReading {
-  title: string;
-  author: string;
-  type: string;
-  link: string;
-}
-
-interface HistoryResponse {
-  headline?: string;
-  topic: string;
-  summary: string;
-  truthHeadline?: string;
-  significance?: number;
-  significanceReason?: string;
-  timeline: TimelineEvent[];
-  patterns: Pattern[];
-  furtherReading: FurtherReading[];
-  whyItMattersNow: string;
-}
+type ExampleResponse = HistoryResponse & { headline?: string };
 
 export function ExampleStory() {
-  const [result, setResult] = useState<HistoryResponse | null>(null);
+  const [result, setResult] = useState<ExampleResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -49,7 +21,7 @@ export function ExampleStory() {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || "Failed to load example");
         }
-        const data = (await res.json()) as HistoryResponse;
+        const data = (await res.json()) as ExampleResponse;
         if (!cancelled) {
           setResult(data);
           setLoading(false);
@@ -98,30 +70,27 @@ export function ExampleStory() {
           </h3>
         )}
         {result.truthHeadline && (
-          <h3
-            className="text-xl md:text-2xl font-bold leading-[1.15] tracking-tight text-green-700 dark:text-green-500"
-            style={{ fontFamily: "var(--font-serif)" }}
-          >
-            {result.truthHeadline}
-          </h3>
+          <>
+            <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-green-700 dark:text-green-500">
+              Our read
+            </p>
+            <h3
+              className="text-xl md:text-2xl font-bold leading-[1.15] tracking-tight text-green-700 dark:text-green-500"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              {result.truthHeadline}
+            </h3>
+          </>
         )}
       </div>
 
       {typeof result.significance === "number" && (
         <div className="mt-5 flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted">
-              Historical Significance
-            </span>
-            <SignificanceDots
-              score={result.significance}
-              reason={result.significanceReason}
-              size="lg"
-            />
-            <span className="text-xs font-mono text-muted">
-              {result.significance}/10
-            </span>
-          </div>
+          <SignificanceLabel
+            score={result.significance}
+            confidence={result.confidence}
+            size="lg"
+          />
           {result.significanceReason && (
             <p className="text-sm text-muted leading-snug">
               {result.significanceReason}
@@ -129,6 +98,8 @@ export function ExampleStory() {
           )}
         </div>
       )}
+
+      <VerdictDetails story={result} />
 
       <hr className="my-6 border-border" />
 
@@ -270,7 +241,7 @@ export function ExampleStory() {
                   >
                     {item.title}
                   </span>
-                  <span className="text-muted">— {item.author}</span>
+                  <span className="text-muted">{item.author}</span>
                   <span className="text-[10px] uppercase tracking-wider text-muted">
                     {item.type}
                   </span>

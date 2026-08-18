@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { SignInButton } from "@/components/sign-in-button";
-import { SignificanceDots } from "@/components/significance-dots";
+import { SignificanceLabel } from "@/components/significance-label";
 import { EmailCapture } from "@/components/email-capture";
 
 interface Headline {
@@ -95,7 +95,7 @@ export default function PreviewPage() {
               </h1>
             </Link>
             <p className="text-sm text-muted">
-              Today&apos;s headlines. The history behind them.
+              Know what changed. Ignore what didn&apos;t.
             </p>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function PreviewPage() {
                     {h.source} / {h.category}
                   </span>
                   {typeof h.significance === "number" && (
-                    <SignificanceDots
+                    <SignificanceLabel
                       score={h.significance}
                       reason={h.significanceReason}
                     />
@@ -218,8 +218,8 @@ export default function PreviewPage() {
 
         <div className="mt-12 border-t border-border pt-8">
           <EmailCapture
-            heading="Get the daily Long View — free."
-            sub="One headline, the history behind it, each morning. If you're not a student of history, everything feels unprecedented."
+            heading="Get the daily Long View, free."
+            sub="A five-minute daily briefing for people who want to stay informed without living in the news."
           />
           <p className="text-xs text-muted mt-3">
             Want the full archive and timelines?{" "}
@@ -236,9 +236,12 @@ export default function PreviewPage() {
             &ldquo;History doesn&apos;t repeat itself, but it often
             rhymes.&rdquo;
           </p>
-          <p className="mt-2 text-xs">
-            Headlines sourced from public RSS feeds. Historical analysis powered
-            by Claude.
+          <p className="mt-2 text-xs max-w-2xl mx-auto">
+            The Long View is produced by an automated analysis system using
+            linked reporting and historical sources. Every story passes
+            automated sourcing, consistency, similarity, and confidence
+            checks. Analysis remains provisional and may be updated as
+            evidence changes.
           </p>
           <p className="mt-3 text-xs flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
             <Link

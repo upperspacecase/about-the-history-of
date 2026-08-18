@@ -36,7 +36,7 @@ export function ShareStory({ data, headline, source, sourceUrl }: Props) {
   const storyTitle = data.truthHeadline || headline;
   const meta = {
     title: storyTitle,
-    text: `${storyTitle} — the history behind the headline. thelongview.org`,
+    text: `${storyTitle}. The history behind the headline. thelongview.org`,
   };
 
   async function shareVariants(
@@ -55,7 +55,7 @@ export function ShareStory({ data, headline, source, sourceUrl }: Props) {
       );
       await shareOrDownload(files, meta);
     } catch {
-      setError("Couldn't generate the image — try again.");
+      setError("Couldn't generate the image. Try again.");
     } finally {
       setBusy(null);
     }

@@ -12,18 +12,21 @@ export function getStripe(): Stripe {
   return cached;
 }
 
-export type Plan = "monthly" | "yearly" | "briefing";
+// One paid plan: The Daily Long View at $99 per year, with a 14-day free
+// trial. No tiers while the product is entirely automated.
+export type Plan = "annual";
 
-export function getPriceId(plan: Plan): string {
-  const id =
-    plan === "yearly"
-      ? process.env.STRIPE_PRICE_YEARLY
-      : plan === "briefing"
-        ? process.env.STRIPE_PRICE_BRIEFING
-        : process.env.STRIPE_PRICE_MONTHLY;
+export const TRIAL_DAYS = 14;
+
+export function getPriceId(plan: Plan = "annual"): string {
+  void plan;
+  // STRIPE_PRICE_ANNUAL is the $99/yr price. STRIPE_PRICE_YEARLY is accepted
+  // as a fallback so existing deployments keep working until the env var is
+  // renamed.
+  const id = process.env.STRIPE_PRICE_ANNUAL ?? process.env.STRIPE_PRICE_YEARLY;
   if (!id) {
     throw new Error(
-      `Missing price ID env var for plan "${plan}": set STRIPE_PRICE_${plan.toUpperCase()}`
+      "Missing price ID env var: set STRIPE_PRICE_ANNUAL (the $99/yr price)"
     );
   }
   return id;
