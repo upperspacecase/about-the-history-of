@@ -1,7 +1,12 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { generateHistory, type HistoryDoc } from "@/lib/history-generate";
+import {
+  generateHistory,
+  StoryWithheldError,
+  type HistoryDoc,
+} from "@/lib/history-generate";
 import { headlineKey } from "@/lib/history-key";
+import { fetchRecentPublishedHeadlines } from "@/lib/recent-headlines";
 
 function validateHeadline(headline: unknown): string | { error: string; status: number } {
   if (!headline || typeof headline !== "string") {
@@ -49,7 +54,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Invalid auth token" }, { status: 401 });
     }
 
-    const { headline } = await request.json();
+    const { headline, source, link } = await request.json();
     const result = validateHeadline(headline);
     if (typeof result !== "string") {
       return Response.json({ error: result.error }, { status: result.status });
@@ -73,7 +78,12 @@ export async function POST(request: Request) {
       });
     }
 
-    const doc = await generateHistory(result);
+    const recentHeadlines = await fetchRecentPublishedHeadlines(50);
+    const doc = await generateHistory(result, {
+      source: typeof source === "string" ? source : undefined,
+      link: typeof link === "string" ? link : undefined,
+      recentHeadlines,
+    });
     await ref.set({
       ...doc,
       generatedBy: uid,
@@ -84,6 +94,17 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("History API error:", err);
     const detail = err instanceof Error ? err.message : String(err);
+    if (err instanceof StoryWithheldError) {
+      return Response.json(
+        {
+          error:
+            "The evidence for this story did not pass our automated checks, so the analysis was withheld rather than published.",
+          detail,
+          withheld: true,
+        },
+        { status: 422 }
+      );
+    }
     if (err instanceof SyntaxError) {
       return Response.json(
         { error: "Failed to parse historical analysis", detail },

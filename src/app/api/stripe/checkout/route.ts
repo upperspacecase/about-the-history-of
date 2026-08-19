@@ -1,5 +1,5 @@
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { getPriceId, getStripe, type Plan } from "@/lib/stripe";
+import { getPriceId, getStripe, TRIAL_DAYS, type Plan } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization") ?? "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
-  // Auth is optional. Subscribing does not require an account — you pay first
+  // Auth is optional. Subscribing does not require an account: you pay first
   // and create the account afterward (it links by email). If a signed-in token
   // is present we link the subscription to that account directly.
   let uid: string | undefined;
@@ -22,15 +22,10 @@ export async function POST(request: Request) {
     }
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | { plan?: unknown }
-    | null;
-  const plan: Plan =
-    body?.plan === "monthly"
-      ? "monthly"
-      : body?.plan === "briefing"
-        ? "briefing"
-        : "yearly";
+  // One plan: The Daily Long View, $99/yr with a 14-day free trial. The
+  // request body is read for forward compatibility but cannot select tiers.
+  await request.json().catch(() => null);
+  const plan: Plan = "annual";
 
   const origin =
     request.headers.get("origin") ??
@@ -53,6 +48,7 @@ export async function POST(request: Request) {
     customer_email: existingCustomerId ? undefined : email,
     metadata: { plan, ...(uid ? { uid } : {}) },
     subscription_data: {
+      trial_period_days: TRIAL_DAYS,
       metadata: { plan, ...(uid ? { uid } : {}) },
     },
     ...(uid ? { client_reference_id: uid } : {}),

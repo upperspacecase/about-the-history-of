@@ -1,54 +1,81 @@
-import Anthropic from "@anthropic-ai/sdk";
-import type { HistoryResponse } from "@/lib/history-types";
-import { RESEARCH_PROMPT } from "@/lib/research-prompt";
+import { buildEvidencePackage } from "./evidence";
+import {
+  generateStory,
+  type StoryDoc,
+  type StoryResult,
+} from "./story-generate";
+import type { Headline } from "./feeds";
 
-export interface HistoryDoc
-  extends Required<
-    Pick<
-      HistoryResponse,
-      "truthHeadline" | "significance" | "significanceReason"
-    >
-  >,
-    Omit<
-      HistoryResponse,
-      "truthHeadline" | "significance" | "significanceReason"
-    > {
-  headline: string;
+/**
+ * Interactive generation for a single reader-selected headline. This wraps
+ * the same verdict-first pipeline the daily briefing uses, but with a
+ * single-source evidence package. Confidence is calculated from the same
+ * observable inputs, so single-source stories surface with the uncertainty
+ * they deserve; the page must display it prominently.
+ */
+
+export type HistoryDoc = StoryDoc;
+
+export class StoryWithheldError extends Error {
+  reasons: string[];
+  constructor(reasons: string[]) {
+    super(`Analysis withheld: ${reasons.join("; ")}`);
+    this.name = "StoryWithheldError";
+    this.reasons = reasons;
+  }
 }
 
-const client = new Anthropic();
+export async function generateHistory(
+  headline: string,
+  options: {
+    source?: string;
+    link?: string;
+    category?: string;
+    recentHeadlines?: string[];
+  } = {}
+): Promise<HistoryDoc> {
+  const member: Headline = {
+    title: headline,
+    link: options.link ?? "",
+    source: options.source ?? "Reader submitted",
+    category: options.category ?? "World",
+    pubDate: new Date().toISOString(),
+    snippet: "",
+  };
 
-export async function generateHistory(headline: string): Promise<HistoryDoc> {
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-5",
-    max_tokens: 4096,
-    system: RESEARCH_PROMPT,
-    messages: [{ role: "user", content: `News headline: "${headline}"` }],
+  const result = buildEvidencePackage([member]);
+  const evidence = result.ok
+    ? result.evidence
+    : {
+        // Interactive requests may rest on a single source. Build the
+        // package anyway; the confidence calculation penalises it and the
+        // interface shows the uncertainty prominently.
+        sourceHeadline: member.title,
+        sourcePublisher: member.source,
+        sourceUrl: member.link,
+        category: member.category,
+        sources: [
+          {
+            publisher: member.source,
+            title: member.title,
+            url: member.link,
+            publishedAt: member.pubDate,
+          },
+        ],
+        passages: [],
+        independentPublisherCount: 1,
+        coverageVolume: 1,
+        rapidlyDeveloping: false,
+      };
+
+  const story: StoryResult = await generateStory({
+    evidence,
+    recentHeadlines: options.recentHeadlines ?? [],
+    allowLowConfidence: true,
   });
 
-  const text =
-    message.content[0].type === "text" ? message.content[0].text : "";
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-  const parsed = JSON.parse(cleaned) as Omit<HistoryDoc, "headline">;
-
-  const significance = Math.min(
-    10,
-    Math.max(1, Math.round(Number(parsed.significance) || 5))
-  );
-
-  return {
-    ...parsed,
-    headline,
-    significance,
-    significanceReason:
-      typeof parsed.significanceReason === "string"
-        ? parsed.significanceReason
-        : "",
-    truthHeadline:
-      typeof parsed.truthHeadline === "string" ? parsed.truthHeadline : "",
-  };
+  if (story.status === "withheld") {
+    throw new StoryWithheldError(story.reasons);
+  }
+  return story.doc;
 }

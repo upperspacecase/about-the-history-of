@@ -1,8 +1,8 @@
-# About the History of...
+# The Long View
 
-Today's headlines. The history behind them.
+Know what changed. Ignore what didn't.
 
-A newspaper-style front page that pulls current headlines from public RSS feeds (BBC, NPR, Al Jazeera, plus Reuters/AP via RSSHub when available). Click any headline and Claude writes the historical context behind it — a topic summary, a timeline of key moments, recurring patterns, and further reading.
+A fully automated daily briefing that ranks up to three stories each morning by historical significance. Events are clustered from public RSS feeds (BBC, NYT, WSJ, Washington Post, CNN, Al Jazeera, NPR, TechCrunch), grounded in an evidence package, analysed and scored across five dimensions, given a verdict-first headline, and validated by deterministic checks plus an automated critic. Stories that fail validation are withheld; there is no human editorial queue. The website is the archive and subscription interface; email is the primary product. See [docs/OFFERING.md](./docs/OFFERING.md) for the full product definition.
 
 ## Demo
 

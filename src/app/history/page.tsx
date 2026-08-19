@@ -5,16 +5,18 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { SignInButton } from "@/components/sign-in-button";
-import { SignificanceDots } from "@/components/significance-dots";
+import { SignificanceLabel } from "@/components/significance-label";
+import { VerdictDetails } from "@/components/verdict-details";
 import { ShareStory } from "@/components/share-story";
 import type { HistoryResponse } from "@/lib/history-types";
 
 const GENERATION_STAGES = [
-  "Searching the archive…",
+  "Building the evidence package…",
   "Tracing the timeline…",
-  "Identifying recurring patterns…",
-  "Scoring its place in history…",
-  "Writing the truth headline…",
+  "Scoring the five dimensions…",
+  "Finding the closest precedent…",
+  "Writing the verdict…",
+  "Running the automated checks…",
 ];
 
 function HistoryContent() {
@@ -56,7 +58,7 @@ function HistoryContent() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ headline }),
+        body: JSON.stringify({ headline, source, link: originalLink }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -69,7 +71,7 @@ function HistoryContent() {
     } finally {
       setGenerating(false);
     }
-  }, [headline, getIdToken]);
+  }, [headline, source, originalLink, getIdToken]);
 
   useEffect(() => {
     if (!headline) {
@@ -158,6 +160,9 @@ function HistoryContent() {
               >
                 {headline}
               </h1>
+              <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-green-700 dark:text-green-500">
+                Our read
+              </p>
               <h1
                 className="text-3xl sm:text-4xl font-bold leading-tight text-green-700 dark:text-green-500"
                 style={{ fontFamily: "var(--font-serif)" }}
@@ -175,26 +180,27 @@ function HistoryContent() {
           )}
           {typeof result?.significance === "number" && (
             <div className="mt-5 flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] uppercase tracking-widest text-muted">
-                  Historical significance
-                </span>
-                <SignificanceDots
-                  score={result.significance}
-                  reason={result.significanceReason}
-                  size="lg"
-                />
-                <span className="text-xs font-mono text-muted">
-                  {result.significance}/10
-                </span>
-              </div>
+              <SignificanceLabel
+                score={result.significance}
+                confidence={result.confidence}
+                size="lg"
+              />
               {result.significanceReason && (
                 <p className="text-sm text-muted leading-snug max-w-2xl">
                   {result.significanceReason}
                 </p>
               )}
+              {result.classification && (
+                <p className="text-xs text-muted">
+                  Event classification:{" "}
+                  <span className="text-foreground font-medium">
+                    {result.classification}
+                  </span>
+                </p>
+              )}
             </div>
           )}
+          {result && <VerdictDetails story={result} />}
           {originalLink && (
             <a
               href={originalLink}
@@ -235,8 +241,8 @@ function HistoryContent() {
             </p>
             {generating && (
               <p className="text-xs text-muted/70 max-w-sm">
-                This usually takes 1–2 minutes. The result is saved so the
-                next reader sees it instantly.
+                This usually takes a minute or two. The result is saved so
+                the next reader sees it instantly.
               </p>
             )}
           </div>
@@ -494,9 +500,11 @@ function HistoryContent() {
 
       {/* Footer */}
       <footer className="border-t border-border mt-auto">
-        <div className="max-w-4xl mx-auto px-6 py-6 text-center text-xs text-muted">
-          Historical analysis powered by Claude. Links to Wikipedia and public
-          sources.
+        <div className="max-w-2xl mx-auto px-6 py-6 text-center text-xs text-muted">
+          The Long View is produced by an automated analysis system using
+          linked reporting and historical sources. Every story passes
+          automated sourcing, consistency, similarity, and confidence checks.
+          Analysis remains provisional and may be updated as evidence changes.
         </div>
       </footer>
     </div>

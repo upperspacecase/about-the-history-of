@@ -5,13 +5,14 @@ import { sendDailyDigestEmail, type DigestStory } from "./resend";
 const SITE = "https://thelongview.org";
 
 /**
- * Send the daily digest of the top stories to every active subscriber.
+ * Send the daily briefing to every active subscriber. An empty story list is
+ * legitimate: subscribers get a short quiet-day note, because "nothing much
+ * changed" is itself a useful conclusion.
  * Lazily mints an unsubscribe token for subscribers that predate the field.
  */
 export async function sendDailyDigest(
   stories: DigestStory[]
 ): Promise<{ sent: number; failed: number }> {
-  if (stories.length === 0) return { sent: 0, failed: 0 };
 
   const db = getAdminDb();
   const snap = await db.collection("subscribers").get();

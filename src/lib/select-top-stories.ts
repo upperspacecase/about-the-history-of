@@ -34,7 +34,29 @@ function overlapScore(a: Set<string>, b: Set<string>): number {
   return shared / Math.min(a.size, b.size);
 }
 
+export interface TopCluster {
+  /** Every report of the underlying event, across publishers. */
+  members: Headline[];
+  /** The report used as the face of the cluster. */
+  representative: Headline;
+  /** Distinct publishers covering the event. */
+  publisherCount: number;
+  /** Raw coverage volume. Never treated as evidence of significance. */
+  coverageVolume: number;
+}
+
 export async function selectTopStories(limit = 10): Promise<Headline[]> {
+  const clusters = await selectTopClusters(limit);
+  return clusters.map((c) => c.representative);
+}
+
+/**
+ * Cluster reports of the same underlying event and return the top clusters.
+ * Ordering favours events covered by more independent publishers, then
+ * recency. Coverage volume is measured so the pipeline can run a noise
+ * check; it is not itself a significance signal.
+ */
+export async function selectTopClusters(limit = 10): Promise<TopCluster[]> {
   const headlines = await fetchAllHeadlines();
 
   const clusters: StoryCluster[] = [];
@@ -76,7 +98,12 @@ export async function selectTopStories(limit = 10): Promise<Headline[]> {
     return mostRecentTime(b) - mostRecentTime(a);
   });
 
-  return clusters.slice(0, limit).map(representative);
+  return clusters.slice(0, limit).map((cluster) => ({
+    members: cluster.members,
+    representative: representative(cluster),
+    publisherCount: cluster.sources.size,
+    coverageVolume: cluster.members.length,
+  }));
 }
 
 function mostRecentTime(cluster: StoryCluster): number {
