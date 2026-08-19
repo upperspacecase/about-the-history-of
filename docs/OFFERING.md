@@ -44,7 +44,9 @@ change anything. Not primarily for historical facts.
 
 One paid plan:
 
-**The Daily Long View: $99 per year**, with a 14-day free trial. No free and
+**The Daily Long View**, with a 14-day free trial. Target price is $99 per
+year; the site displays £200/year until the $99 price is created in Stripe
+(see below). No free and
 paid tiers, and no GBP 200 / GBP 300 ladder while the product is entirely
 automated.
 
@@ -58,7 +60,10 @@ The subscription includes:
 * Automatic updates when important evidence changes.
 
 Stripe env var: `STRIPE_PRICE_ANNUAL` (the $99/yr price). `STRIPE_PRICE_YEARLY`
-is read as a fallback for existing deployments.
+is read as a fallback for existing deployments. The paywall copy must always
+match the price the checkout actually charges: it currently shows £200/year
+(the live `STRIPE_PRICE_YEARLY` price) and switches to $99 when the new
+price is live.
 
 ## Daily briefing structure
 
@@ -148,7 +153,7 @@ Headline: "Not everything breaking is important." Supporting copy: "The Long
 View ranks three stories each morning by historical significance, so you can
 understand what changed and ignore what didn't." and "A five-minute daily
 briefing for people who want to stay informed without living in the news."
-Primary CTA: "Start your 14-day trial · $99/year". Never promise "the truth
+Primary CTA: "Start your 14-day trial" with the live price. Never promise "the truth
 beneath the surface"; the product promises a transparent, sourced judgment.
 
 ## Transparency

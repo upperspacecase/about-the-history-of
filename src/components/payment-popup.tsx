@@ -260,7 +260,10 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
                 The Daily Long View
               </h3>
               <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-4xl font-bold tracking-tight">$99</span>
+                {/* Shows the price Stripe actually charges (the current
+                    yearly price). When the $99 price goes live in Stripe and
+                    STRIPE_PRICE_ANNUAL is set, update this to $99. */}
+                <span className="text-4xl font-bold tracking-tight">£200</span>
                 <span className="text-sm text-muted">/year</span>
               </div>
               <p className="mt-1 text-xs text-muted">
@@ -274,7 +277,7 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
               >
                 {checkoutLoading
                   ? "Opening Stripe…"
-                  : "Start your 14-day trial · $99/year"}
+                  : "Start your 14-day trial · £200/year"}
               </button>
               <ul className="mt-5 space-y-2.5 text-sm border-t border-border pt-5">
                 {PLAN_FEATURES.map((f) => (
