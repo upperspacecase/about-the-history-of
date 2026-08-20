@@ -68,12 +68,14 @@ export async function selectTopClusters(limit = 10): Promise<TopCluster[]> {
     const wordSet = new Set(words);
 
     let matched: StoryCluster | undefined;
+    let matchedIndex = -1;
     for (let i = 0; i < clusters.length; i++) {
       if (
         clusters[i].signature === sig ||
-        overlapScore(wordSets[i], wordSet) >= 0.6
+        overlapScore(wordSets[i], wordSet) >= 0.5
       ) {
         matched = clusters[i];
+        matchedIndex = i;
         break;
       }
     }
@@ -81,6 +83,9 @@ export async function selectTopClusters(limit = 10): Promise<TopCluster[]> {
     if (matched) {
       matched.members.push(headline);
       matched.sources.add(headline.source);
+      // Grow the cluster's vocabulary so later reports of the same event,
+      // worded differently by another publisher, can still join it.
+      for (const w of wordSet) wordSets[matchedIndex].add(w);
     } else {
       clusters.push({
         members: [headline],

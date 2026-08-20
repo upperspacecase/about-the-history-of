@@ -143,9 +143,11 @@ Confidence is calculated from observable inputs (`src/lib/confidence.ts`):
 number and quality of independent sources, availability of a primary source,
 agreement between sources, whether the event is still rapidly developing,
 strength of evidence for the historical comparison, and the number of
-unsupported claims removed during validation. Low-confidence stories are
-withheld from the briefing; the interactive reader path may publish them
-with the uncertainty shown prominently.
+unsupported claims removed during validation. Low-confidence stories
+publish with the uncertainty shown prominently (the label and the confidence
+inputs are on every card); factual validation, not the confidence label, is
+what withholds a story. The briefing fills to three stories from the
+validated pool whenever three or more candidates survive validation.
 
 ## Landing-page positioning
 

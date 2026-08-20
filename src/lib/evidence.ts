@@ -41,7 +41,16 @@ const TIER_ONE_PUBLISHERS = new Set([
   "Washington Post",
   "Wall Street Journal",
   "NPR",
+  "Al Jazeera",
+  "CNN",
 ]);
+
+export function hasTierOnePublisher(publishers: Iterable<string>): boolean {
+  for (const p of publishers) {
+    if (TIER_ONE_PUBLISHERS.has(p)) return true;
+  }
+  return false;
+}
 
 const RAPID_WINDOW_MS = 6 * 60 * 60 * 1000;
 

@@ -7,6 +7,8 @@ import type { ConfidenceLevel } from "./history-types";
 export interface ConfidenceInputs {
   /** Number of independent publishers reporting the event. */
   independentSourceCount: number;
+  /** At least one source is a tier-one publisher. */
+  hasReputableSource?: boolean;
   /** A primary document (filing, ruling, transcript, dataset) is available. */
   hasPrimarySource: boolean;
   /** How closely the sources agree on the facts. */
@@ -38,6 +40,9 @@ export function computeConfidence(inputs: ConfidenceInputs): ConfidenceResult {
   } else if (inputs.independentSourceCount === 2) {
     points += 1;
     reasons.push("2 independent sources");
+  } else if (inputs.hasReputableSource) {
+    points += 1;
+    reasons.push("single source (reputable publisher)");
   } else {
     reasons.push("single source");
   }
@@ -48,8 +53,13 @@ export function computeConfidence(inputs: ConfidenceInputs): ConfidenceResult {
   }
 
   if (inputs.sourceAgreement === "agree") {
-    points += 2;
-    reasons.push("sources agree");
+    if (inputs.independentSourceCount >= 2) {
+      points += 2;
+      reasons.push("sources agree");
+    } else {
+      points += 1;
+      reasons.push("no contradicting reports found");
+    }
   } else if (inputs.sourceAgreement === "minor-disagreement") {
     points += 1;
     reasons.push("minor disagreement between sources");
@@ -58,7 +68,7 @@ export function computeConfidence(inputs: ConfidenceInputs): ConfidenceResult {
   }
 
   if (inputs.rapidlyDeveloping) {
-    points -= 2;
+    points -= 1;
     reasons.push("still rapidly developing");
   }
 
@@ -70,9 +80,12 @@ export function computeConfidence(inputs: ConfidenceInputs): ConfidenceResult {
     reasons.push("weak evidence for the historical comparison");
   }
 
-  if (inputs.removedClaims > 0) {
-    const penalty = Math.min(2, inputs.removedClaims);
-    points -= penalty;
+  if (inputs.removedClaims >= 3) {
+    points -= 1;
+    reasons.push(
+      `${inputs.removedClaims} unsupported claim(s) removed in validation`
+    );
+  } else if (inputs.removedClaims > 0) {
     reasons.push(
       `${inputs.removedClaims} unsupported claim(s) removed in validation`
     );

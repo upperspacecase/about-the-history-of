@@ -90,6 +90,28 @@ function assignRoles(
     .sort((a, b) => b.coverageVolume - a.coverageVolume)[0];
   take(noise, "noise");
 
+  // Fill to three from the remaining validated stories. Every story here
+  // already passed the full validation pipeline; the strict role filters
+  // above only decide labelling, and must not empty the briefing. Prefer
+  // higher confidence, then higher significance.
+  const confidenceRank: Record<string, number> = { High: 2, Medium: 1, Low: 0 };
+  const fillers = [...remaining].sort((a, b) => {
+    const ca = confidenceRank[a.doc.confidence ?? "Low"] ?? 0;
+    const cb = confidenceRank[b.doc.confidence ?? "Low"] ?? 0;
+    if (ca !== cb) return cb - ca;
+    return b.doc.significance - a.doc.significance;
+  });
+  for (const filler of fillers) {
+    if (picks.length >= MAX_STORIES) break;
+    const role: CardRole =
+      filler.doc.significance >= 5
+        ? "shift"
+        : filler.coverageVolume >= 2 && filler.doc.significance <= 4
+          ? "noise"
+          : "pattern";
+    picks.push({ story: filler, role });
+  }
+
   return picks.slice(0, MAX_STORIES);
 }
 
@@ -137,6 +159,10 @@ async function main() {
       result = await generateStory({
         evidence: evidence.evidence,
         recentHeadlines,
+        // Low-confidence stories publish with the uncertainty shown
+        // prominently instead of being withheld; the briefing must not go
+        // out empty on an ordinary news day.
+        allowLowConfidence: true,
       });
     } catch (err) {
       withheld.push(

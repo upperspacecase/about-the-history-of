@@ -15,7 +15,11 @@ import {
   buildHeadlinePrompt,
   CRITIC_PROMPT,
 } from "./research-prompt";
-import { evidenceToPrompt, type EvidencePackage } from "./evidence";
+import {
+  evidenceToPrompt,
+  hasTierOnePublisher,
+  type EvidencePackage,
+} from "./evidence";
 
 /**
  * The fully automated production pipeline for one story:
@@ -329,6 +333,9 @@ export async function generateStory(
     const breakdownTotal = normalizeBreakdown(analysis.scoreBreakdown);
     const confidence = computeConfidence({
       independentSourceCount: input.evidence.independentPublisherCount,
+      hasReputableSource: hasTierOnePublisher(
+        input.evidence.sources.map((s) => s.publisher)
+      ),
       hasPrimarySource: analysis.hasPrimarySource,
       sourceAgreement: analysis.sourceAgreement,
       rapidlyDeveloping:
