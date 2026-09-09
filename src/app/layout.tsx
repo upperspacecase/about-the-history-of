@@ -15,9 +15,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Long View",
+  title: "The Long View | The daily news briefing in context",
   description:
-    "If you're not a student of history, everything feels unprecedented. Today's headlines with the history behind them.",
+    "Understand the news without following it all day. Read a short daily briefing with relevant history, visible sources and clear updates.",
+  openGraph: {
+    title: "The Long View | The daily news briefing in context",
+    description:
+      "Understand the news without following it all day. Read a short daily briefing with relevant history, visible sources and clear updates.",
+  },
 };
 
 export default function RootLayout({

@@ -71,12 +71,14 @@ architecture on `prd-v2`.
 - [ ] LIVE TEST BLOCKED on API credits (run `npx tsx scripts/test-story.ts`
       with a funded key, or `gh workflow run test-story.yml`)
 
-### Stage 2 — ongoing stories (NEXT)
-- [ ] story-store.ts: canonical stories, matching (entity/word overlap +
-      recent-title comparison), immutable storyVersions, material-change
-      decision, corrections/retraction records, legacy histories mapping
-- [ ] Edition assembly + atomic publication (versions first, then edition doc)
-- [ ] pipelineRuns records with per-candidate CandidateDecision
+### Stage 2 — ongoing stories [DONE iter 2, commit df3d254]
+- [x] story-store.ts: matching (conservative, entity+overlap, 45-day window),
+      immutable storyVersions (`${storyId}-v${n}`), publishEdition (refuses
+      silent re-publication; verifies referenced versions exist), corrections
+      + retraction, legacy histories mapping (histories/{id}.storyId)
+- [x] Analysis reports entities/topics + materialChange/changeReason;
+      generateStory returns no-material-change as a first-class outcome
+- [ ] pipelineRuns records land in Stage 4 (publish-edition script)
 
 ### Stage 3 — public reading experience
 - [ ] / = latest edition (server component; states; ending; email invite);
@@ -106,3 +108,6 @@ architecture on `prd-v2`.
 - Iter 1: repo inspected (stale local main), Stage 1 built on prd-v2-briefing.
 - Iter 2: discovered v1 briefing on origin/main; re-merged Stage 1 into
   main's architecture on prd-v2; credits blocker found + Tay notified.
+  Stage 2 store built + committed (df3d254). NEXT: Stage 3 public reading
+  experience (homepage edition + story pages + archive + copy pack §10,
+  paywall out of the reading journey).

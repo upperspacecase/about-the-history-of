@@ -1,77 +1,28 @@
 "use client";
 
-import { useState, useEffect, Suspense, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/lib/firebase/auth-context";
-import { SignInButton } from "@/components/sign-in-button";
 import { SignificanceLabel } from "@/components/significance-label";
 import { VerdictDetails } from "@/components/verdict-details";
 import { ShareStory } from "@/components/share-story";
 import type { HistoryResponse } from "@/lib/history-types";
 
-const GENERATION_STAGES = [
-  "Building the evidence package…",
-  "Tracing the timeline…",
-  "Scoring the five dimensions…",
-  "Finding the closest precedent…",
-  "Writing the verdict…",
-  "Running the automated checks…",
-];
-
+// Explicitly labelled legacy page (AT 19): read-only access to histories
+// published under the old headline-keyed model. A history mapped to a
+// canonical story redirects to the current story page; nothing generates
+// here any more.
 function HistoryContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const headline = searchParams.get("headline") || "";
   const source = searchParams.get("source") || "";
   const originalLink = searchParams.get("link") || "";
 
-  const { user, loading: authLoading, signIn, getIdToken } = useAuth();
-
   const [result, setResult] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [needsSignIn, setNeedsSignIn] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
-  const [stageIndex, setStageIndex] = useState(0);
-
-  useEffect(() => {
-    if (!generating) return;
-    setStageIndex(0);
-    const interval = setInterval(() => {
-      setStageIndex((s) => (s + 1) % GENERATION_STAGES.length);
-    }, 2400);
-    return () => clearInterval(interval);
-  }, [generating]);
-
-  const generate = useCallback(async () => {
-    setError("");
-    setGenerating(true);
-    try {
-      const token = await getIdToken();
-      if (!token) {
-        setNeedsSignIn(true);
-        return;
-      }
-      const res = await fetch("/api/history", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ headline, source, link: originalLink }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || data.error || "Failed to load history");
-      }
-      setResult(data);
-      setNeedsSignIn(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setGenerating(false);
-    }
-  }, [headline, source, originalLink, getIdToken]);
 
   useEffect(() => {
     if (!headline) {
@@ -89,9 +40,14 @@ function HistoryContent() {
         if (cancelled) return;
         if (res.ok) {
           const data = await res.json();
+          if (data.storySlug) {
+            // Mapped to a canonical story: resolve to the current version.
+            router.replace(`/story/${data.storySlug}`);
+            return;
+          }
           setResult(data);
         } else if (res.status === 404) {
-          setNeedsSignIn(true);
+          setNotFound(true);
         } else {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || "Failed to load history");
@@ -108,7 +64,7 @@ function HistoryContent() {
     return () => {
       cancelled = true;
     };
-  }, [headline]);
+  }, [headline, router]);
 
   return (
     <div className="flex flex-col flex-1">
@@ -129,7 +85,7 @@ function HistoryContent() {
             >
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            All Headlines
+            The briefing
           </Link>
           <div className="h-4 w-px bg-border" />
           <span
@@ -138,9 +94,9 @@ function HistoryContent() {
           >
             The Long View
           </span>
-          <div className="ml-auto">
-            <SignInButton />
-          </div>
+          <span className="ml-auto text-[11px] uppercase tracking-wider text-muted border border-border rounded-full px-2 py-0.5">
+            Archived format
+          </span>
         </div>
       </header>
 
@@ -154,17 +110,14 @@ function HistoryContent() {
           )}
           {result?.truthHeadline ? (
             <div className="mt-2 space-y-2">
-              <h1
-                className="text-3xl sm:text-4xl font-bold leading-tight line-through text-muted decoration-muted/60"
-                style={{ fontFamily: "var(--font-serif)" }}
-              >
-                {headline}
-              </h1>
-              <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-green-700 dark:text-green-500">
-                Our read
+              <p className="text-sm text-muted">
+                Original reporting: {headline}
+              </p>
+              <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-accent">
+                In context
               </p>
               <h1
-                className="text-3xl sm:text-4xl font-bold leading-tight text-green-700 dark:text-green-500"
+                className="text-3xl sm:text-4xl font-bold leading-tight"
                 style={{ fontFamily: "var(--font-serif)" }}
               >
                 {result.truthHeadline}
@@ -224,59 +177,31 @@ function HistoryContent() {
         </div>
 
         {/* Loading */}
-        {(loading || generating) && (
+        {loading && (
           <div className="flex flex-col items-center justify-center gap-5 py-20 text-center">
             <div
               className="h-10 w-10 rounded-full border-2 border-border border-t-accent animate-spin"
               role="status"
               aria-label="Loading"
             />
-            <p
-              key={generating ? stageIndex : "checking"}
-              className="text-sm text-muted animate-fade-in"
-            >
-              {generating
-                ? GENERATION_STAGES[stageIndex]
-                : "Checking the archive…"}
+            <p className="text-sm text-muted animate-fade-in">
+              Checking the archive…
             </p>
-            {generating && (
-              <p className="text-xs text-muted/70 max-w-sm">
-                This usually takes a minute or two. The result is saved so
-                the next reader sees it instantly.
-              </p>
-            )}
           </div>
         )}
-        {/* Sign-in / generate prompt */}
-        {!loading && !generating && !result && needsSignIn && !error && (
+        {/* Unpublished story */}
+        {!loading && !result && notFound && !error && (
           <div className="py-12 text-center max-w-md mx-auto">
-            <h2
-              className="text-2xl font-bold mb-3"
-              style={{ fontFamily: "var(--font-serif)" }}
-            >
-              No history written yet
-            </h2>
-            <p className="text-muted mb-6 leading-relaxed">
-              Be the first to commission the historical context for this
-              headline. Once written, it&apos;s saved for everyone to read.
+            <p className="text-muted leading-relaxed">
+              We haven&apos;t published a sourced explanation of this story
+              yet.
             </p>
-            {authLoading ? (
-              <div className="h-10 w-40 mx-auto bg-border/50 rounded animate-pulse-bar" />
-            ) : user ? (
-              <button
-                onClick={generate}
-                className="px-5 py-2.5 rounded-md bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Write the history
-              </button>
-            ) : (
-              <button
-                onClick={() => signIn()}
-                className="px-5 py-2.5 rounded-md bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Sign in with Google to generate
-              </button>
-            )}
+            <Link
+              href="/"
+              className="inline-block mt-4 text-sm text-accent hover:underline"
+            >
+              Back to the briefing
+            </Link>
           </div>
         )}
 
@@ -491,7 +416,7 @@ function HistoryContent() {
                 >
                   <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
-                Back to all headlines
+                Back to the briefing
               </Link>
             </div>
           </div>
