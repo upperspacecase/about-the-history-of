@@ -59,8 +59,19 @@ const FurtherReadingSchema = z.object({
 
 const AnalysisSchema = z.object({
   topic: z.string(),
+  /** Specific people, institutions, places central to the story. */
+  entities: z.array(z.string()),
+  /** 2-4 broad lowercase topic tags for the archive. */
+  topics: z.array(z.string()),
   summary: z.string(),
   whatChanged: z.string(),
+  /**
+   * When a previous published account is supplied: is there a material
+   * development beyond it? New wording, reactions, or re-reporting is not
+   * material. Always true for first coverage.
+   */
+  materialChange: z.boolean(),
+  changeReason: z.string(),
   background: z.string(),
   uncertainties: z.array(z.string()),
   whatToWatch: z.string(),
@@ -148,7 +159,13 @@ export interface StoryGenerationInput {
 }
 
 export type StoryResult =
-  | { status: "published"; doc: StoryDoc; research: ResearchNotes }
+  | {
+      status: "published";
+      doc: StoryDoc;
+      research: ResearchNotes;
+      changeReason?: string;
+    }
+  | { status: "no-material-change"; reason: string }
   | { status: "withheld"; reasons: string[] };
 
 /** Never let an en dash or em dash reach a published field. */
@@ -405,6 +422,11 @@ function assembleDoc(
     },
     sources: evidence.sources,
     topic: clean(analysis.topic),
+    entities: analysis.entities.map(clean).filter(Boolean).slice(0, 16),
+    topics: analysis.topics
+      .map((t) => clean(t).toLowerCase())
+      .filter(Boolean)
+      .slice(0, 6),
     summary: clean(analysis.summary),
     timeline: analysis.timeline.map((t) => ({
       ...t,
@@ -447,6 +469,15 @@ export async function generateStory(
       previousAccountText,
       feedback
     );
+    // No-material-change is a decision, not a failure (PRD §8): the story
+    // stays covered, no new card is created.
+    if (input.previousAccount && !rawAnalysis.materialChange) {
+      return {
+        status: "no-material-change",
+        reason: rawAnalysis.changeReason || "no material development",
+      };
+    }
+
     const grounding = enforceHistoricalGrounding(
       rawAnalysis,
       input.evidence,
@@ -522,7 +553,14 @@ export async function generateStory(
 
     const critic = await runCritic(evidenceText, research.notes, doc);
     if (critic.pass) {
-      return { status: "published", doc, research };
+      return {
+        status: "published",
+        doc,
+        research,
+        changeReason: input.previousAccount
+          ? stripDashes(rawAnalysis.changeReason)
+          : undefined,
+      };
     }
     feedback = critic.failures.map((f) => `${f.code}: ${f.detail}`);
   }

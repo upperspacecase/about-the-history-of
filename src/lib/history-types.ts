@@ -109,6 +109,10 @@ export interface HistoryResponse {
   sourcePublisher?: string;
   sourceUrl?: string;
   cardRole?: CardRole;
+  /** Specific people, institutions, places central to the story (PRD v2). */
+  entities?: string[];
+  /** Broad lowercase topic tags for the archive (PRD v2). */
+  topics?: string[];
   generatedAtIso?: string;
   updatedAtIso?: string;
   revisions?: Revision[];

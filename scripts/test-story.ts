@@ -52,7 +52,7 @@ async function main() {
   });
 
   console.log("\n=== RESULT ===");
-  if (story.status === "withheld") {
+  if (story.status !== "published") {
     console.log(JSON.stringify(story, null, 2));
   } else {
     console.log(

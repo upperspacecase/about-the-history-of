@@ -175,6 +175,10 @@ async function main() {
       withheld.push(`"${rep.title}": ${result.reasons.join("; ")}`);
       continue;
     }
+    if (result.status === "no-material-change") {
+      withheld.push(`"${rep.title}": no material change (${result.reason})`);
+      continue;
+    }
 
     const doc = result.doc;
 

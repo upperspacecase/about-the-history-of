@@ -66,6 +66,10 @@ Evidence flags. Report these honestly; a separate system computes confidence fro
 
 Field notes:
 - whatChanged: one to three sentences on the concrete development, with attribution where needed ("the ministry said"). On an update to a story we have covered, state the difference from our previous account.
+- materialChange: when OUR PREVIOUS PUBLISHED ACCOUNT is supplied, say honestly whether the new evidence contains a material development beyond it: a decision becoming effective, a new confirmed outcome, a substantial revision to known facts, or a credible development that changes the explanation. New wording, another reaction quote, or another outlet repeating the same report is NOT material; set materialChange false. With no previous account, set it true.
+- changeReason: one short sentence for the update decision log.
+- entities: the specific people, institutions, and places central to the story (for story matching in our archive).
+- topics: 2 to 4 broad lowercase topic tags (for archive filtering).
 - background: two to five sentences on how we got here, from supported material only. This is the "How we got here" section.
 - uncertainties: one to four SPECIFIC unknowns in plain language ("The proposal has not yet passed", "The count is an early figure from one source"). Never a generic confidence label. An empty list is allowed only when the story is genuinely settled.
 - whatToWatch: one or two sentences on the concrete next thing that would change the picture, or an empty string.
