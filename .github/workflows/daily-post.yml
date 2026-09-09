@@ -1,22 +1,20 @@
-name: Daily Reels
+name: Daily Edition
 
 on:
   schedule:
-    # 12:00 UTC. The pipeline takes ~10-25 min to go live, so content publishes
-    # ~8:15am ET — fresh for New York's morning and the larger US Instagram
-    # audience — and ~1:15pm London. GitHub cron is fixed UTC and ignores DST:
-    # in winter this lands ~7:15am ET / ~12:15pm London. To optimise for the
-    # London morning + digest email instead, use 07:30 UTC (~8:45am London).
-    - cron: "0 12 * * *"
+    # 07:00 UTC (PRD §12 proposed schedule): the edition, briefing email and
+    # reels land for the London morning and are ready well before the US day.
+    # GitHub cron is fixed UTC and ignores DST.
+    - cron: "0 7 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Render + upload reels but do NOT post to Instagram or send email"
+        description: "Generate + render locally but do NOT publish, email, or post"
         type: boolean
         default: false
 
 jobs:
-  daily-post:
+  publish-edition:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +31,7 @@ jobs:
       # render step fails on the first run, add the Remotion-recommended apt
       # dependencies step here (see Remotion docs: "Render on GitHub Actions").
       # Do NOT add that step pre-emptively.
-      - run: npx tsx scripts/daily-post.ts
+      - run: npx tsx scripts/publish-edition.ts
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}

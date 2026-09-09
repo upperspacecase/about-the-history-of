@@ -20,16 +20,18 @@ import {
   hasTierOnePublisher,
   type EvidencePackage,
 } from "./evidence";
+import { researchBackground, type ResearchNotes } from "./research";
 
 /**
- * The fully automated production pipeline for one story:
+ * The fully automated production pipeline for one story (PRD v2 §7):
  *
- *   evidence package -> analysis -> headline candidates -> deterministic
- *   validation -> automated critic -> publish or withhold.
+ *   evidence package -> grounded research (web search, verified URLs) ->
+ *   analysis -> historical-link verification -> headline candidates ->
+ *   deterministic validation -> automated critic -> publish or withhold.
  *
- * The verdict is generated first and the headline afterward. A story that
+ * The analysis is generated first and the headline afterward. A story that
  * fails validation twice is withheld automatically; it is never sent to a
- * human queue and never published to fill the daily quota.
+ * human queue and never published to fill a quota.
  */
 
 const MODEL = "claude-opus-5";
@@ -57,8 +59,22 @@ const FurtherReadingSchema = z.object({
 
 const AnalysisSchema = z.object({
   topic: z.string(),
+  /** Specific people, institutions, places central to the story. */
+  entities: z.array(z.string()),
+  /** 2-4 broad lowercase topic tags for the archive. */
+  topics: z.array(z.string()),
   summary: z.string(),
   whatChanged: z.string(),
+  /**
+   * When a previous published account is supplied: is there a material
+   * development beyond it? New wording, reactions, or re-reporting is not
+   * material. Always true for first coverage.
+   */
+  materialChange: z.boolean(),
+  changeReason: z.string(),
+  background: z.string(),
+  uncertainties: z.array(z.string()),
+  whatToWatch: z.string(),
   classification: z.enum(EVENT_CLASSIFICATIONS),
   scoreBreakdown: z.object({
     scale: z.number(),
@@ -68,11 +84,13 @@ const AnalysisSchema = z.object({
     spillovers: z.number(),
   }),
   significanceReason: z.string(),
-  precedent: z.object({
-    name: z.string(),
-    similarity: z.string(),
-    crucialDifference: z.string(),
-  }),
+  precedent: z
+    .object({
+      name: z.string(),
+      similarity: z.string(),
+      crucialDifference: z.string(),
+    })
+    .nullable(),
   whatWouldChange: z.object({
     raise: z.string(),
     lower: z.string(),
@@ -81,7 +99,7 @@ const AnalysisSchema = z.object({
   sourceAgreement: z.enum(["agree", "minor-disagreement", "major-disagreement"]),
   hasPrimarySource: z.boolean(),
   rapidlyDeveloping: z.boolean(),
-  precedentStrength: z.enum(["strong", "moderate", "weak"]),
+  precedentStrength: z.enum(["strong", "moderate", "weak", "none"]),
   unsupportedClaimsRemoved: z.array(z.string()),
   timeline: z.array(TimelineEventSchema),
   patterns: z.array(PatternSchema),
@@ -112,7 +130,7 @@ export interface StoryDoc
   > {
   /** The original source headline (field name kept for stored documents). */
   headline: string;
-  /** The Long View verdict headline. */
+  /** The editorial headline (field name kept for stored documents). */
   truthHeadline: string;
   significance: number;
   significanceReason: string;
@@ -124,13 +142,30 @@ export interface StoryGenerationInput {
   recentHeadlines: string[];
   /**
    * Publish a low-confidence story anyway. Only for surfaces that display
-   * the uncertainty prominently; the daily briefing never sets this.
+   * the uncertainty prominently; the daily briefing shows uncertainty on
+   * every card, so it sets this.
    */
   allowLowConfidence?: boolean;
+  /**
+   * Our previous published account of this story, when it exists (STY 03).
+   * whatChanged is then written as the difference from this account.
+   */
+  previousAccount?: {
+    editorialHeadline: string;
+    whatChanged: string;
+    background: string;
+    publishedAt: string;
+  } | null;
 }
 
 export type StoryResult =
-  | { status: "published"; doc: StoryDoc }
+  | {
+      status: "published";
+      doc: StoryDoc;
+      research: ResearchNotes;
+      changeReason?: string;
+    }
+  | { status: "no-material-change"; reason: string }
   | { status: "withheld"; reasons: string[] };
 
 /** Never let an en dash or em dash reach a published field. */
@@ -143,26 +178,97 @@ function stripDashes(text: string): string {
 
 async function runAnalysis(
   evidenceText: string,
+  researchText: string,
+  previousAccountText: string,
   feedback: string[]
 ): Promise<Analysis> {
-  const user =
-    feedback.length === 0
-      ? evidenceText
-      : `${evidenceText}\n\nYOUR PREVIOUS ANALYSIS FAILED VALIDATION. Failure codes:\n${feedback
-          .map((f) => `- ${f}`)
-          .join("\n")}\nProduce a corrected analysis that fixes every failure above.`;
+  const parts = [evidenceText];
+  parts.push(
+    "",
+    "VERIFIED RESEARCH NOTES (the only permitted source of historical specifics; may be empty):",
+    researchText || "(no verified research notes; return an empty timeline, empty patterns, empty furtherReading, and precedent null)"
+  );
+  if (previousAccountText) {
+    parts.push("", previousAccountText);
+  }
+  if (feedback.length > 0) {
+    parts.push(
+      "",
+      "YOUR PREVIOUS ANALYSIS FAILED VALIDATION. Failure codes:",
+      ...feedback.map((f) => `- ${f}`),
+      "Produce a corrected analysis that fixes every failure above."
+    );
+  }
 
   const response = await client.messages.parse({
     model: MODEL,
     max_tokens: 16000,
     system: ANALYSIS_PROMPT,
-    messages: [{ role: "user", content: user }],
+    messages: [{ role: "user", content: parts.join("\n") }],
     output_config: { format: zodOutputFormat(AnalysisSchema) },
   });
   if (!response.parsed_output) {
     throw new Error("Analysis call returned no parseable output");
   }
   return response.parsed_output;
+}
+
+/**
+ * Historical grounding gate (EVD 06), enforced in code: a timeline entry or
+ * reading item survives only when its link is a URL we actually hold, from
+ * the verified research sources or the evidence package itself. Anything
+ * else is silently droppable decoration, recorded for the run log.
+ */
+function enforceHistoricalGrounding(
+  analysis: Analysis,
+  evidence: EvidencePackage,
+  research: ResearchNotes
+): { analysis: Analysis; dropped: string[] } {
+  const allowed = new Set<string>([
+    ...research.sources.map((s) => s.url),
+    ...evidence.sources.map((s) => s.url),
+  ]);
+  const dropped: string[] = [];
+
+  const timeline = analysis.timeline.filter((t) => {
+    if (allowed.has(t.link)) return true;
+    dropped.push(`timeline: ${t.year} ${t.title}`);
+    return false;
+  });
+  const furtherReading = analysis.furtherReading.filter((f) => {
+    if (allowed.has(f.link)) return true;
+    dropped.push(`furtherReading: ${f.title}`);
+    return false;
+  });
+
+  // A precedent needs research support: with no verified notes at all, a
+  // named precedent can only have come from model memory.
+  let precedent = analysis.precedent;
+  let precedentStrength = analysis.precedentStrength;
+  if (precedent && research.sources.length === 0) {
+    dropped.push(`precedent: ${precedent.name}`);
+    precedent = null;
+    precedentStrength = "none";
+  }
+  // Patterns are historical mechanisms; without research support they are
+  // model memory too.
+  let patterns = analysis.patterns;
+  if (patterns.length > 0 && research.sources.length === 0) {
+    for (const p of patterns) dropped.push(`pattern: ${p.title}`);
+    patterns = [];
+  }
+
+  return {
+    analysis: {
+      ...analysis,
+      timeline,
+      furtherReading,
+      precedent,
+      precedentStrength,
+      patterns,
+    },
+    dropped,
+  };
 }
 
 interface HeadlineAttempt {
@@ -176,7 +282,7 @@ async function generateValidatedHeadline(options: {
   sourceHeadline: string;
   recentHeadlines: string[];
   dynamicBans: string[];
-  precedentName: string;
+  precedentName?: string;
 }): Promise<HeadlineAttempt> {
   let feedback: string[] = [];
 
@@ -224,24 +330,32 @@ async function generateValidatedHeadline(options: {
 
 async function runCritic(
   evidenceText: string,
+  researchText: string,
   doc: StoryDoc
 ): Promise<{ pass: boolean; failures: { code: string; detail: string }[] }> {
   const user = [
     "EVIDENCE PACKAGE:",
     evidenceText,
     "",
+    "VERIFIED RESEARCH NOTES (the only permitted source of historical specifics):",
+    researchText || "(none; the story must contain no historical specifics)",
+    "",
     "COMPLETE STORY (as it would publish):",
     JSON.stringify(
       {
         sourceHeadline: doc.sourceHeadline,
         sourcePublisher: doc.sourcePublisher,
-        verdictHeadline: doc.truthHeadline,
+        editorialHeadline: doc.truthHeadline,
         classification: doc.classification,
         significance: doc.significance,
         scoreBreakdown: doc.scoreBreakdown,
         significanceReason: doc.significanceReason,
         confidence: doc.confidence,
         confidenceReasons: doc.confidenceReasons,
+        whatChanged: doc.whatChanged,
+        background: doc.background,
+        uncertainties: doc.uncertainties,
+        whatToWatch: doc.whatToWatch,
         summary: doc.summary,
         whyItMattersNow: doc.whyItMattersNow,
         precedent: doc.precedent,
@@ -291,17 +405,28 @@ function assembleDoc(
     scoreBreakdown: breakdownTotal.breakdown,
     confidence: confidence.level,
     confidenceReasons: confidence.reasons,
-    precedent: {
-      name: clean(analysis.precedent.name),
-      similarity: clean(analysis.precedent.similarity),
-      crucialDifference: clean(analysis.precedent.crucialDifference),
-    },
+    whatChanged: clean(analysis.whatChanged),
+    background: clean(analysis.background),
+    uncertainties: analysis.uncertainties.map(clean).filter(Boolean),
+    whatToWatch: clean(analysis.whatToWatch ?? ""),
+    precedent: analysis.precedent
+      ? {
+          name: clean(analysis.precedent.name),
+          similarity: clean(analysis.precedent.similarity),
+          crucialDifference: clean(analysis.precedent.crucialDifference),
+        }
+      : undefined,
     whatWouldChange: {
       raise: clean(analysis.whatWouldChange.raise),
       lower: clean(analysis.whatWouldChange.lower),
     },
     sources: evidence.sources,
     topic: clean(analysis.topic),
+    entities: analysis.entities.map(clean).filter(Boolean).slice(0, 16),
+    topics: analysis.topics
+      .map((t) => clean(t).toLowerCase())
+      .filter(Boolean)
+      .slice(0, 6),
     summary: clean(analysis.summary),
     timeline: analysis.timeline.map((t) => ({
       ...t,
@@ -326,13 +451,43 @@ export async function generateStory(
   const overused = detectOverusedLanguage(input.recentHeadlines);
   const dynamicBans = [...overused.words, ...overused.bigrams];
 
+  const research = await researchBackground(input.evidence);
+
+  const previousAccountText = input.previousAccount
+    ? [
+        "OUR PREVIOUS PUBLISHED ACCOUNT (write whatChanged as the difference from this; reuse still-accurate background):",
+        JSON.stringify(input.previousAccount, null, 2),
+      ].join("\n")
+    : "";
+
   let feedback: string[] = [];
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const analysis = await runAnalysis(evidenceText, feedback);
+    const rawAnalysis = await runAnalysis(
+      evidenceText,
+      research.notes,
+      previousAccountText,
+      feedback
+    );
+    // No-material-change is a decision, not a failure (PRD §8): the story
+    // stays covered, no new card is created.
+    if (input.previousAccount && !rawAnalysis.materialChange) {
+      return {
+        status: "no-material-change",
+        reason: rawAnalysis.changeReason || "no material development",
+      };
+    }
+
+    const grounding = enforceHistoricalGrounding(
+      rawAnalysis,
+      input.evidence,
+      research
+    );
+    const analysis = grounding.analysis;
+
     const breakdownTotal = normalizeBreakdown(analysis.scoreBreakdown);
     const confidence = computeConfidence({
-      independentSourceCount: input.evidence.independentPublisherCount,
+      independentSourceCount: input.evidence.independentOriginCount,
       hasReputableSource: hasTierOnePublisher(
         input.evidence.sources.map((s) => s.publisher)
       ),
@@ -340,25 +495,31 @@ export async function generateStory(
       sourceAgreement: analysis.sourceAgreement,
       rapidlyDeveloping:
         analysis.rapidlyDeveloping || input.evidence.rapidlyDeveloping,
-      precedentStrength: analysis.precedentStrength,
-      removedClaims: analysis.unsupportedClaimsRemoved.length,
+      precedentStrength:
+        analysis.precedentStrength === "none"
+          ? "weak"
+          : analysis.precedentStrength,
+      removedClaims:
+        analysis.unsupportedClaimsRemoved.length + grounding.dropped.length,
     });
 
     if (confidence.level === "Low" && !input.allowLowConfidence) {
       return {
         status: "withheld",
-        reasons: [
-          `low confidence: ${confidence.reasons.join("; ")}`,
-        ],
+        reasons: [`low confidence: ${confidence.reasons.join("; ")}`],
       };
     }
 
     const verdictSummary = [
       `What changed: ${analysis.whatChanged}`,
+      `Why it matters: ${analysis.whyItMattersNow}`,
       `Classification: ${analysis.classification}`,
-      `Provisional significance: ${breakdownTotal.total}/10 (${significanceLabel(breakdownTotal.total)})`,
+      `Internal significance: ${breakdownTotal.total}/10 (${significanceLabel(breakdownTotal.total)})`,
       `Why: ${analysis.significanceReason}`,
-      `Precedent: ${analysis.precedent.name}. Crucial difference: ${analysis.precedent.crucialDifference}`,
+      analysis.precedent
+        ? `Comparison: ${analysis.precedent.name}. Where it breaks down: ${analysis.precedent.crucialDifference}`
+        : "Comparison: none supported.",
+      `Uncertainties: ${analysis.uncertainties.join(" | ") || "none stated"}`,
       `Confidence: ${confidence.level} (${confidence.reasons.join("; ")})`,
     ].join("\n");
 
@@ -368,7 +529,7 @@ export async function generateStory(
       sourceHeadline: input.evidence.sourceHeadline,
       recentHeadlines: input.recentHeadlines,
       dynamicBans,
-      precedentName: analysis.precedent.name,
+      precedentName: analysis.precedent?.name,
     });
 
     if (!headlineAttempt.headline) {
@@ -390,9 +551,16 @@ export async function generateStory(
       continue;
     }
 
-    const critic = await runCritic(evidenceText, doc);
+    const critic = await runCritic(evidenceText, research.notes, doc);
     if (critic.pass) {
-      return { status: "published", doc };
+      return {
+        status: "published",
+        doc,
+        research,
+        changeReason: input.previousAccount
+          ? stripDashes(rawAnalysis.changeReason)
+          : undefined,
+      };
     }
     feedback = critic.failures.map((f) => `${f.code}: ${f.detail}`);
   }

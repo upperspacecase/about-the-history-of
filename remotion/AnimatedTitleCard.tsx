@@ -49,9 +49,9 @@ function Headline({
     <div
       style={{
         fontFamily: SERIF,
-        fontSize: 84,
+        fontSize: 68,
         fontWeight: 700,
-        lineHeight: 1.14,
+        lineHeight: 1.16,
       }}
     >
       <span
@@ -77,17 +77,28 @@ export type AnimatedTitleCardProps = {
   logoSrc: string;
 };
 
+function clampText(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${cut.slice(0, lastSpace > 0 ? lastSpace : max).trimEnd()}…`;
+}
+
 export const AnimatedTitleCard = ({
   doc,
   source,
   logoSrc,
 }: AnimatedTitleCardProps) => {
   const frame = useCurrentFrame();
-  const headline = doc.headline;
-  const truth = doc.truthHeadline?.trim() ?? "";
+  const editorial = doc.truthHeadline?.trim() || doc.headline;
+  const explanation = clampText(
+    (doc.whatChanged ?? doc.summary ?? "").trim(),
+    260
+  );
+  const qualification = clampText((doc.uncertainties ?? [])[0] ?? "", 160);
 
-  // The card holds its finished state for the whole Reel; the only motion is a
-  // blinking caret at the end of the truth headline.
+  // The card holds its finished state for the whole Reel; the only motion is
+  // a blinking caret at the end of the editorial headline.
   const caretBlink = Math.floor(frame / 9) % 2 === 0 ? 1 : 0.2;
 
   return (
@@ -163,20 +174,46 @@ export const AnimatedTitleCard = ({
             justifyContent: "center",
           }}
         >
-          {source ? (
-            <div style={{ marginBottom: 24 }}>
-              <Kicker color={C.accent}>headline from {source}</Kicker>
+          <div style={{ marginBottom: 24 }}>
+            <Kicker color={C.accent}>In context</Kicker>
+          </div>
+
+          <Headline text={editorial} color={C.fg} caret={caretBlink} />
+
+          {explanation ? (
+            <div
+              style={{
+                marginTop: 36,
+                fontFamily: SANS,
+                fontSize: 36,
+                lineHeight: 1.4,
+                color: C.fg,
+              }}
+            >
+              <span style={{ fontWeight: 700 }}>What changed: </span>
+              {explanation}
             </div>
           ) : null}
 
-          <Headline text={headline} color={C.muted} struck />
+          {qualification ? (
+            <div
+              style={{
+                marginTop: 22,
+                fontFamily: SANS,
+                fontSize: 30,
+                lineHeight: 1.4,
+                color: C.muted,
+              }}
+            >
+              {qualification}
+            </div>
+          ) : null}
 
-          <div style={{ marginTop: 40 }}>
-            <Kicker color={C.accent}>The Long View Critique</Kicker>
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <Headline text={truth} color={C.truth} caret={caretBlink} />
-          </div>
+          {source ? (
+            <div style={{ marginTop: 30 }}>
+              <Kicker color={C.muted}>Reported by {source}</Kicker>
+            </div>
+          ) : null}
         </div>
       </div>
 

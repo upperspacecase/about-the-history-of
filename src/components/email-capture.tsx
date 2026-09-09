@@ -79,7 +79,7 @@ export function EmailCapture({
         </button>
       </form>
       {status === "error" && (
-        <p className="text-xs text-red-600 mt-2">Something went wrong. Try again.</p>
+        <p className="text-xs text-red-600 mt-2">We couldn&rsquo;t complete your signup. Please try again.</p>
       )}
     </div>
   );

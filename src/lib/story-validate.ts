@@ -6,17 +6,22 @@ import type { HistoryResponse } from "./history-types";
  * anything failing here never reaches publication. Semantic checks (claim
  * grounding, precedent comparability, exaggerated certainty) belong to the
  * critic call.
+ *
+ * PRD v2: a precedent, timeline, or patterns section is OPTIONAL. A missing
+ * comparison is a valid outcome; only a present-but-vague one fails.
  */
 
 export type StoryFailureCode =
   | "missing-verdict-headline"
   | "score-breakdown-invalid"
-  | "missing-precedent"
   | "generic-precedent"
   | "vague-crucial-difference"
   | "missing-what-would-change"
   | "missing-sources"
-  | "missing-explanation";
+  | "missing-explanation"
+  | "missing-what-changed"
+  | "missing-background"
+  | "missing-uncertainties";
 
 export interface StoryFailure {
   code: StoryFailureCode;
@@ -40,7 +45,7 @@ export function validateStory(
   if (!story.truthHeadline?.trim()) {
     failures.push({
       code: "missing-verdict-headline",
-      detail: "the story has no Long View verdict headline",
+      detail: "the story has no editorial headline",
     });
   }
 
@@ -48,32 +53,54 @@ export function validateStory(
     failures.push({
       code: "score-breakdown-invalid",
       detail:
-        "the five components must each be 0-2 and add up to the displayed score",
+        "the five components must each be 0-2 and add up to the internal score",
     });
   }
 
-  const precedentName = story.precedent?.name?.trim() ?? "";
-  if (!precedentName) {
+  if (!story.whatChanged?.trim()) {
     failures.push({
-      code: "missing-precedent",
-      detail: "every comparison must name a specific precedent",
-    });
-  } else if (
-    GENERIC_PRECEDENTS.some((p) => p.test(precedentName)) ||
-    precedentName.length < 4
-  ) {
-    failures.push({
-      code: "generic-precedent",
-      detail: `"${precedentName}" is not a specific precedent`,
+      code: "missing-what-changed",
+      detail: "the story must state the concrete development",
     });
   }
 
-  const difference = story.precedent?.crucialDifference?.trim() ?? "";
-  if (difference.length < 30) {
+  if (!story.background?.trim()) {
     failures.push({
-      code: "vague-crucial-difference",
-      detail: "the crucial difference must be concrete, not a stub",
+      code: "missing-background",
+      detail: "the story must explain how we got here",
     });
+  }
+
+  // Uncertainty is stated per story unless the event is settled AND the
+  // reporting is not rapidly developing; an empty list plus a rapidly
+  // developing flag is a contradiction.
+  if (!Array.isArray(story.uncertainties)) {
+    failures.push({
+      code: "missing-uncertainties",
+      detail: "uncertainties must be present (an empty list only for settled stories)",
+    });
+  }
+
+  // Precedent is optional; when present it must be specific.
+  if (story.precedent) {
+    const precedentName = story.precedent.name?.trim() ?? "";
+    if (
+      !precedentName ||
+      GENERIC_PRECEDENTS.some((p) => p.test(precedentName)) ||
+      precedentName.length < 4
+    ) {
+      failures.push({
+        code: "generic-precedent",
+        detail: `"${precedentName}" is not a specific precedent`,
+      });
+    }
+    const difference = story.precedent.crucialDifference?.trim() ?? "";
+    if (difference.length < 30) {
+      failures.push({
+        code: "vague-crucial-difference",
+        detail: "the crucial difference must be concrete, not a stub",
+      });
+    }
   }
 
   if (!story.whatWouldChange?.raise?.trim() || !story.whatWouldChange?.lower?.trim()) {

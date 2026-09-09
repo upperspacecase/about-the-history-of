@@ -63,6 +63,9 @@ export interface SupportingSource {
   title: string;
   url: string;
   publishedAt?: string;
+  /** What was actually reviewed (STY 05): full article, excerpt, or snippet. */
+  accessMode?: "full" | "excerpt" | "snippet";
+  retrievedAt?: string;
 }
 
 /**
@@ -92,12 +95,24 @@ export interface HistoryResponse {
   confidence?: ConfidenceLevel;
   confidenceReasons?: string[];
   precedent?: Precedent;
+  /** The concrete development (PRD v2 "What changed"). */
+  whatChanged?: string;
+  /** How we got here, from supported material only (PRD v2). */
+  background?: string;
+  /** Specific material unknowns, plain language (PRD v2). */
+  uncertainties?: string[];
+  /** The concrete next thing that would change the picture (PRD v2). */
+  whatToWatch?: string;
   whatWouldChange?: WhatWouldChange;
   sources?: SupportingSource[];
   sourceHeadline?: string;
   sourcePublisher?: string;
   sourceUrl?: string;
   cardRole?: CardRole;
+  /** Specific people, institutions, places central to the story (PRD v2). */
+  entities?: string[];
+  /** Broad lowercase topic tags for the archive (PRD v2). */
+  topics?: string[];
   generatedAtIso?: string;
   updatedAtIso?: string;
   revisions?: Revision[];

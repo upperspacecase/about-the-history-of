@@ -10,7 +10,7 @@
     "remotion:studio": "remotion studio",
     "remotion:render": "remotion render Demo public/demo.mp4",
     "reel:render": "remotion render Reel out/reel.mp4",
-    "daily-post": "tsx scripts/daily-post.ts"
+    "publish-edition": "tsx scripts/publish-edition.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",

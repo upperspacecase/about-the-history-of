@@ -62,20 +62,17 @@ export function ExampleStory() {
 
       <div className="space-y-2">
         {result.headline && (
-          <h3
-            className="text-xl md:text-2xl font-bold leading-[1.15] tracking-tight line-through text-muted decoration-muted/60"
-            style={{ fontFamily: "var(--font-serif)" }}
-          >
-            {result.headline}
-          </h3>
+          <p className="text-sm text-muted">
+            Original reporting: {result.headline}
+          </p>
         )}
         {result.truthHeadline && (
           <>
-            <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-green-700 dark:text-green-500">
-              Our read
+            <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-accent">
+              In context
             </p>
             <h3
-              className="text-xl md:text-2xl font-bold leading-[1.15] tracking-tight text-green-700 dark:text-green-500"
+              className="text-xl md:text-2xl font-bold leading-[1.15] tracking-tight"
               style={{ fontFamily: "var(--font-serif)" }}
             >
               {result.truthHeadline}

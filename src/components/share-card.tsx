@@ -226,30 +226,10 @@ export function ShareCard({
           justifyContent: "center",
         }}
       >
-        {source ? (
-          <div style={{ marginBottom: 24 }}>
-            <Kicker color={C.accent}>headline from {source}</Kicker>
-          </div>
-        ) : null}
         {truthHeadline ? (
           <>
-            <div
-              style={{
-                fontFamily: SERIF,
-                fontSize: 84,
-                fontWeight: 700,
-                lineHeight: 1.14,
-                color: C.muted,
-                textDecoration: "line-through",
-                textDecorationColor: "rgba(107,107,107,0.55)",
-                textDecorationThickness: "4px",
-              }}
-            >
-              {headline}
-            </div>
-            {sourceLine}
-            <div style={{ marginTop: 40 }}>
-              <Kicker color={C.accent}>The Long View Critique</Kicker>
+            <div style={{ marginBottom: 24 }}>
+              <Kicker color={C.accent}>In context</Kicker>
             </div>
             <div
               style={{
@@ -257,12 +237,17 @@ export function ShareCard({
                 fontSize: 84,
                 fontWeight: 700,
                 lineHeight: 1.14,
-                color: C.truth,
-                marginTop: 14,
+                color: C.fg,
               }}
             >
               {truthHeadline}
             </div>
+            {source ? (
+              <div style={{ marginTop: 30 }}>
+                <Kicker color={C.muted}>Reported by {source}</Kicker>
+              </div>
+            ) : null}
+            {sourceLine}
           </>
         ) : (
           <>
