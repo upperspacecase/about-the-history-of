@@ -402,6 +402,7 @@ async function main() {
           await ledgerRef.set({
             id: ledgerId,
             editionId,
+            versionId: target.versionId,
             channel: "instagram",
             status: "failed",
             attempts: ((prior.data()?.attempts as number) ?? 0) + 1,
@@ -413,6 +414,7 @@ async function main() {
         await ledgerRef.set({
           id: ledgerId,
           editionId,
+          versionId: target.versionId,
           channel: "instagram",
           status: "sent",
           attempts: ((prior.data()?.attempts as number) ?? 0) + 1,

@@ -1,120 +1,92 @@
-# PRD v2 implementation progress
+# PRD v2 implementation record
 
-Source PRD: /Users/taypattison/Downloads/The-Long-View-PRD.md (v2, 2026-09-09).
-Branch: `prd-v2` (cut from origin/main). This file is the loop's working
-state, updated every iteration so a fresh context can resume. Slim before merge.
+Source PRD: The Long View PRD v2 (2026-09-09). Implemented 2026-09-09/10 on
+branch `prd-v2`, shipped to main. This file is the implementation record and
+operator handoff.
 
-## Key discovery (iter 2)
+## What must happen before the first real edition
 
-origin/main already carried a v1 automated-briefing implementation (commits
-62eb0cc/321e/5396070, merged from another Claude session): zod structured
-outputs on claude-opus-5, snippet-based evidence packages, confidence
-computation from observables, banned-language + headline validation, critic
-pass, role-based (shift/pattern/noise) 3-story briefing in `briefings/{date}`,
-and a paywall at GBP 200/yr. The PRD §3 change map was written against THIS
-code. My first branch (`prd-v2-briefing`, kept for reference, pushed) was cut
-from a stale local main; its Stage-1 modules were re-merged into main's
-architecture on `prd-v2`.
+1. **Anthropic API credits** (org 0f47a9c6…): local and Actions keys both
+   return "credit balance too low". The daily pipeline cannot generate until
+   billing is topped up. The 1Password item "Anthropic API - The Long View"
+   holds a valid key; `.env.local` holds a stale one (update it by hand).
+2. After credits: run `gh workflow run test-story.yml` (single story through
+   research/analysis/critic), then `gh workflow run daily-post.yml -f
+   dry_run=true` (full pipeline, publishes nothing), then let the 07:00 UTC
+   schedule publish the first edition.
+3. **Existing paying subscribers** (PRD §14): the paywall is out of the
+   reading journey; billing, Stripe routes, webhooks and entitlements are
+   untouched, and /account shows the real plan. Decide their treatment
+   (keep billing, credit, refund) and communicate it — nothing here changed
+   or authorised billing.
 
-## Blockers for Tay (report at the end; notified via push already)
+## Deviations from the PRD (deliberate, flagged)
 
-- **Anthropic API credits exhausted** (org 0f47a9c6…, workspace wrkspc_016bk…).
-  Local + Actions keys both 400 with "credit balance too low". Tomorrow's
-  12:00 UTC Daily Reels run will fail. Live pipeline testing blocked until
-  topped up. The 1Password "Anthropic API - The Long View" key is valid;
-  `.env.local` holds a stale/invalid key (Tay must update it herself).
-- Existing paying subscribers: PRD §14 transition decision before the paywall
-  is removed in production.
+- **EVD 05 claim-level ledger:** claims are checked semantically by the
+  critic and historical links are verified in code, but per-claim evidence
+  records are not stored as separate documents. The full evidence inputs
+  (passages with access modes, research sources) are stored on each version.
+- **Merges/splits of story identities (§8):** conservative matching means
+  low-confidence matches stay separate stories (PRD-required default);
+  operator-driven merge/split tooling is not built.
+- **OPS 07 cost records:** runs record model + stage outcomes + decision
+  counts, not per-call token costs.
+- **§15 measurement:** analytics events beyond the existing /api/track
+  clicks (edition_viewed etc.) are not instrumented; the reader pilot is a
+  human activity.
+- **Corrections with replacement text** require a hand-authored corrected
+  doc; `scripts/correct-story.ts` covers public-note corrections and
+  retractions, which is the realistic solo-operator workflow.
 
-## Architecture decisions (made once, don't relitigate)
+## Acceptance sweep (§16), code-level
 
-- Model: claude-opus-5 everywhere (matches main's v1).
-- Generation flow per story (story-generate.ts): evidence package (REAL
-  retrieval now: SSRF-guarded article fetch, access modes full/excerpt/
-  snippet, wire-copy origin groups) -> researchBackground() (research.ts:
-  web_search server tool, pause_turn loop, only URLs actually received
-  survive; findings citing unverified sources stripped in code) -> analysis
-  (messages.parse + zod; new fields whatChanged/background/uncertainties/
-  whatToWatch; timeline/patterns/furtherReading optional; precedent nullable)
-  -> enforceHistoricalGrounding() (code gate: timeline/reading links must be
-  held URLs; precedent+patterns dropped when no research) -> headline
-  candidates (plain editorial headline, paraphrase-of-source now allowed,
-  identical copy banned) -> validateStory (background/uncertainties required,
-  precedent optional) -> critic (research notes are the only permitted source
-  of historical specifics; qualification-lost + weak-uncertainties codes).
-- Confidence uses independentOriginCount (EVD 03), not publisher count.
-- Headline-only generation REMOVED: history-generate.ts deleted, /api/history
-  POST returns 410, GET is read-only legacy with storySlug mapping.
-- StoryDoc keeps legacy field names (truthHeadline = editorial headline) for
-  stored-document compatibility; new PRD fields added to HistoryResponse.
-- Firestore (new, Stage 2): `stories`, `storyVersions`, `editions`,
-  `corrections`, `pipelineRuns`, `deliveries`, `errorReports`. Existing
-  `histories`, `briefings`, `posts`, `subscribers`, `users` untouched.
-- Search: `searchTokens` array-contains + pagination on stories.
-- Homepage feature flag: env `LEGACY_HOMEPAGE=1` keeps old feed page.
-- NO billing changes; paywall removed from reading journey in Stage 3.
-- Edition: UTC, id YYYY-MM-DD; statuses published|quiet|partial|delayed|
-  unavailable.
+Live generation was blocked by the credit balance, so AT 02/06/07/09 are
+verified at the gate-logic level, not with live model output.
 
-## Stage checklist
+- AT 01 public reading, no popup: PASS (all reading routes public; popup only behind LEGACY_HOMEPAGE=1)
+- AT 02 one story identity per event: clustering + matching + no-material-change path in place
+- AT 03 development links predecessor: PASS (publishStoryVersion + "Since our last update" + previous-version link)
+- AT 04 first coverage says "What happened": PASS
+- AT 05 wire copies ≠ independent origins: PASS (content fingerprints; snippet-only sources count once per publisher)
+- AT 06 inaccessible source → excerpt limits/withhold: retrieval fallback + prompt + critic
+- AT 07 unsupported history removed: PASS (enforceHistoricalGrounding, URL allowlist in code)
+- AT 08 no analogy is valid: PASS (nullable precedent, validators allow empty sections)
+- AT 09 weak claim → no confident headline: critic (qualification-lost) + headline validation
+- AT 10 two cards, no quota: PASS (no minimum, roles removed from selection)
+- AT 11 feeds fail → unavailable, never quiet: PASS
+- AT 12 quiet edition scoped message: PASS
+- AT 13 corrections: notices + records + open correctionTasks for distributed posts: PASS (amendment itself is manual)
+- AT 14 re-run safety: PASS (edition existence check, lock, delivery ledger)
+- AT 15 IG failure is a channel error: PASS (isolated stage; dashboard shows stages)
+- AT 16 dry run publishes nothing: PASS (no story/edition/email/post/ledger writes)
+- AT 17 archive search + pagination + date filters: PASS
+- AT 18 hostile source text inert: untrusted-data guards in prompts; SSRF-bounded retrieval
+- AT 19 legacy /history: PASS (read-only, labelled, redirects to mapped story)
+- AT 20 provider error ≠ sent: PASS (resend throws on error; ledger failed)
+- AT 21 qualifications survive Reels: PASS (uncertainty on card + caption)
+- AT 22 clear ending, no feed: PASS
+- AT 23 a11y basics: semantic headings, labelled fields, no colour-only signals; not formally audited
+- AT 24 existing customer sees accurate plan: PASS (/account, no billing changes)
 
-### Stage 1 — evidence + publication rules [DONE iter 2, commit pending]
-- [x] evidence.ts: retrieval + access modes + origin groups (merged into main's shape)
-- [x] research.ts: grounded background research w/ web_search + URL verification
-- [x] research-prompt.ts: PRD-aligned analysis/headline/critic prompts
-- [x] story-generate.ts: research stage + grounding gate + new fields + optional history
-- [x] story-validate.ts: precedent optional; background/uncertainties required
-- [x] headline-validate.ts: plain restatement allowed, identical copy banned
-- [x] feeds.ts: fetchAllReports (24h window, 200 cap, coverage stats)
-- [x] Headline-only path removed (history-generate deleted; /api/history POST 410)
-- [x] scripts/test-story.ts rewritten; tsc clean
-- [ ] LIVE TEST BLOCKED on API credits (run `npx tsx scripts/test-story.ts`
-      with a funded key, or `gh workflow run test-story.yml`)
+## Architecture (for future sessions)
 
-### Stage 2 — ongoing stories [DONE iter 2, commit df3d254]
-- [x] story-store.ts: matching (conservative, entity+overlap, 45-day window),
-      immutable storyVersions (`${storyId}-v${n}`), publishEdition (refuses
-      silent re-publication; verifies referenced versions exist), corrections
-      + retraction, legacy histories mapping (histories/{id}.storyId)
-- [x] Analysis reports entities/topics + materialChange/changeReason;
-      generateStory returns no-material-change as a first-class outcome
-- [ ] pipelineRuns records land in Stage 4 (publish-edition script)
-
-### Stage 3 — public reading experience [DONE iter 3, commit fe11996]
-- [x] / = latest edition (server component, force-dynamic; quiet/partial/
-      delayed/unavailable states; caught-up ending; email invite);
-      LEGACY_HOMEPAGE=1 renders src/components/legacy-home.tsx
-- [x] /briefing/[date], /story/[slug]?version=, /archive (stories+editions
-      tabs, token search w/ pagination), /how-it-works, /account
-- [x] /api/briefing (latest/date/list), /api/stories, /api/story/[id],
-      /api/corrections/report (create-only per-hour dedupe)
-- [x] §10 copy; paywall out of reading journey (PaymentPopup only reachable
-      via legacy flag); /history legacy-labelled + redirects to mapped story;
-      /preview redirects home; layout metadata per §10
-- [x] Numeric significance/dots absent from new reader UI (legacy /history
-      page still shows SignificanceLabel — archived format, acceptable)
-- [x] npm run build green; lint: only 7 pre-existing problems (remotion demo
-      + legacy-home)
-
-### Stage 4 — distribution + ops
-- [ ] scripts/publish-edition.ts replacing daily-post story selection
-      (ingest fetchAllReports -> cluster -> story resolution -> evidence ->
-      generate -> select (no roles quota) -> publish atomically -> email ->
-      reels); dry-run isolation; run records; workflow update
-- [ ] digest/resend: email IS the briefing; delivery ledger idempotency; §10 templates
-- [ ] caption.ts/Reel: published versions only, no strikethrough language
-- [ ] admin page: run outcomes, withheld reasons, deliveries
-
-### Stage 5 — verification + ship
-- [ ] tsc/lint/build clean; §16 acceptance sweep recorded here
-- [ ] Merge prd-v2 -> main, push (Tay authorized ship-to-main)
-- [ ] Final report: credits blocker, subscriber transition decision, stale
-      .env.local key, PRD deviations
-
-## Iteration log
-- Iter 1: repo inspected (stale local main), Stage 1 built on prd-v2-briefing.
-- Iter 2: discovered v1 briefing on origin/main; re-merged Stage 1 into
-  main's architecture on prd-v2; credits blocker found + Tay notified.
-  Stage 2 store built + committed (df3d254). NEXT: Stage 3 public reading
-  experience (homepage edition + story pages + archive + copy pack §10,
-  paywall out of the reading journey).
+- Generation (src/lib/story-generate.ts): evidence package (real retrieval,
+  SSRF-guarded, access modes, origin groups) → researchBackground()
+  (web_search server tool on claude-opus-5; only URLs actually received
+  survive) → analysis (messages.parse + zod; optional history sections,
+  nullable precedent, materialChange decision) → enforceHistoricalGrounding
+  (code URL gate) → headline candidates + deterministic validation → critic.
+  Two attempts, then withheld. Internal significance/confidence never render
+  as numbers in the reader UI.
+- Store (story-store.ts): stories / storyVersions (immutable,
+  `${storyId}-v${n}`) / editions (id = UTC date; statuses published, quiet,
+  partial, delayed, unavailable) / corrections / correctionTasks /
+  pipelineRuns / deliveries / errorReports / locks. Legacy `histories` is
+  read-only, mapped via histories/{id}.storyId.
+- Pipeline (scripts/publish-edition.ts): the §13 staged flow; email and
+  reels are isolated channels with an idempotent ledger; ops report to
+  OPS_EMAIL; red CI only when the edition itself fails.
+- Web: / (latest edition), /briefing/[date], /story/[slug]?version=,
+  /archive, /how-it-works, /account, /admin (+ pipeline panel). Public APIs:
+  /api/briefing, /api/stories, /api/story/[id], /api/corrections/report.
+  Rollback: LEGACY_HOMEPAGE=1 renders the old feed page.

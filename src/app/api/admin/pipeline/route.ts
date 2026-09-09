@@ -72,6 +72,13 @@ export async function GET(request: Request) {
     };
   });
 
+  const tasksSnap = await db
+    .collection("correctionTasks")
+    .where("status", "==", "open")
+    .limit(50)
+    .get();
+  const correctionTasks = tasksSnap.docs.map((d) => d.data());
+
   const deliveriesSnap = await db
     .collection("deliveries")
     .orderBy("updatedAt", "desc")
@@ -79,5 +86,11 @@ export async function GET(request: Request) {
     .get();
   const deliveries = deliveriesSnap.docs.map((d) => d.data());
 
-  return Response.json({ runs, editions, errorReports, deliveries });
+  return Response.json({
+    runs,
+    editions,
+    errorReports,
+    correctionTasks,
+    deliveries,
+  });
 }

@@ -83,17 +83,19 @@ export async function findMatchingStory(
     .sort((a, b) => b.length - a.length)
     .slice(0, 10);
 
+  // array-contains-any plus a range filter would need a composite index;
+  // the candidate set is small, so the recency window is applied in memory.
   const snap = await db
     .collection("stories")
     .where("searchTokens", "array-contains-any", probes)
-    .where("latestUpdateAt", ">=", cutoff)
-    .limit(25)
+    .limit(50)
     .get();
 
   let best: StoryMatch | null = null;
   for (const docSnap of snap.docs) {
     const story = docSnap.data() as Story;
     if (story.status === "retracted") continue;
+    if (story.latestUpdateAt < cutoff) continue;
 
     const storyWords = new Set([
       ...story.searchTokens,
@@ -405,10 +407,16 @@ export async function publishEdition(input: EditionInput): Promise<Edition> {
 export async function recordCorrection(options: {
   story: Story;
   affectedVersionIds: string[];
-  replacementDoc: StoryDoc | null; // null = retraction
+  /**
+   * A corrected story document, when one exists. A material correction may
+   * also ship as a public note alone (the notice renders above the affected
+   * analysis); a retraction never has a replacement.
+   */
+  replacementDoc: StoryDoc | null;
   researchSources: ResearchSource[];
   reason: string;
   publicNote: string;
+  severity: "material" | "retraction";
 }): Promise<CorrectionRecord> {
   const db = getAdminDb();
   const now = new Date().toISOString();
@@ -443,7 +451,7 @@ export async function recordCorrection(options: {
       },
       { merge: true }
     );
-  } else {
+  } else if (options.severity === "retraction") {
     batch.set(
       db.collection("stories").doc(options.story.id),
       { status: "retracted", latestUpdateAt: now },
@@ -458,7 +466,7 @@ export async function recordCorrection(options: {
     replacementVersionId,
     reason: options.reason,
     publicNote: options.publicNote,
-    severity: options.replacementDoc ? "material" : "retraction",
+    severity: options.severity,
     createdAt: now,
   };
   batch.set(correctionRef, record);
@@ -467,12 +475,36 @@ export async function recordCorrection(options: {
     const patch: Record<string, unknown> = {
       correctionIds: FieldValue.arrayUnion(record.id),
     };
-    if (!options.replacementDoc) patch.retracted = true;
+    if (options.severity === "retraction") patch.retracted = true;
     batch.set(db.collection("storyVersions").doc(versionId), patch, {
       merge: true,
     });
   }
 
   await batch.commit();
+
+  // Distribution follow-up (§9): a correction that touches versions already
+  // posted to a channel creates a task to amend or remove the post.
+  // Unresolved tasks surface on the admin pipeline panel.
+  for (const versionId of options.affectedVersionIds) {
+    const sent = await db
+      .collection("deliveries")
+      .where("versionId", "==", versionId)
+      .where("channel", "==", "instagram")
+      .where("status", "==", "sent")
+      .get();
+    for (const delivery of sent.docs) {
+      await db.collection("correctionTasks").doc(`${record.id}:${delivery.id}`).set({
+        correctionId: record.id,
+        deliveryId: delivery.id,
+        versionId,
+        channel: "instagram",
+        action: options.replacementDoc ? "amend-caption" : "remove-post",
+        status: "open",
+        createdAt: now,
+      });
+    }
+  }
+
   return record;
 }
