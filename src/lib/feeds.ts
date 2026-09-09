@@ -123,6 +123,51 @@ export async function fetchFeed(feed: FeedSource): Promise<Headline[]> {
   }
 }
 
+export interface FeedSweep {
+  reports: Headline[];
+  feedsAttempted: number;
+  feedsSucceeded: number;
+}
+
+// Candidate-pool fetch for the edition pipeline (PRD §6): keeps provenance,
+// dedupes only exact same-title duplicates, bounds at 200 normalised reports,
+// and reports feed coverage so a thin pool is never mistaken for a quiet day.
+export async function fetchAllReports(
+  windowHours = 24
+): Promise<FeedSweep> {
+  const results = await Promise.allSettled(FEEDS.map(fetchFeed));
+  const reports: Headline[] = [];
+  let feedsSucceeded = 0;
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value.length > 0) {
+      feedsSucceeded++;
+      reports.push(...result.value);
+    }
+  }
+
+  const cutoff = Date.now() - windowHours * 60 * 60 * 1000;
+  const seen = new Set<string>();
+  const unique = reports.filter((h) => {
+    if (!h.title) return false;
+    const t = new Date(h.pubDate).getTime();
+    if (Number.isFinite(t) && t > 0 && t < cutoff) return false;
+    const key = `${h.source}|${h.title.toLowerCase()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  unique.sort(
+    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+  );
+
+  return {
+    reports: unique.slice(0, 200),
+    feedsAttempted: FEEDS.length,
+    feedsSucceeded,
+  };
+}
+
 export async function fetchAllHeadlines(): Promise<Headline[]> {
   const results = await Promise.allSettled(FEEDS.map(fetchFeed));
   const headlines: Headline[] = [];

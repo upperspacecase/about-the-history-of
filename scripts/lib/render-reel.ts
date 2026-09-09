@@ -2,7 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
-import type { HistoryDoc } from "../../src/lib/history-generate";
+import type { HistoryDoc } from "../../src/lib/history-types";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.resolve(here, "../../remotion/index.ts");

@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { FieldValue } from "firebase-admin/firestore";
 import { selectTopStories } from "../src/lib/select-top-stories";
-import { generateHistory, type HistoryDoc } from "../src/lib/history-generate";
+import type { HistoryDoc } from "../src/lib/history-types";
 import { headlineKey } from "../src/lib/history-key";
 import { getAdminDb } from "../src/lib/firebase/admin";
 import { buildCaption } from "../src/lib/caption";
@@ -28,18 +28,11 @@ async function main() {
     const id = headlineKey(candidate.title);
     const ref = db.collection("histories").doc(id);
     const snap = await ref.get();
-    let doc: HistoryDoc;
-    if (snap.exists) {
-      doc = snap.data() as HistoryDoc;
-    } else {
-      doc = await generateHistory(candidate.title);
-      await ref.set({
-        ...doc,
-        generatedBy: "cron",
-        generatedAt: FieldValue.serverTimestamp(),
-      });
-    }
-    stories.push({ candidate, doc });
+    // Headline-only generation is removed (PRD §7); only stories that already
+    // have a published history can post. This script is superseded by
+    // scripts/publish-edition.ts.
+    if (!snap.exists) continue;
+    stories.push({ candidate, doc: snap.data() as HistoryDoc });
   }
 
   stories.sort((a, b) => b.doc.significance - a.doc.significance);

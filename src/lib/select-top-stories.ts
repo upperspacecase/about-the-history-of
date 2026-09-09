@@ -34,6 +34,63 @@ function overlapScore(a: Set<string>, b: Set<string>): number {
   return shared / Math.min(a.size, b.size);
 }
 
+export interface ReportCluster {
+  members: Headline[];
+  sources: string[]; // distinct publisher names
+  representative: Headline;
+  words: string[];
+}
+
+// Group reports about the same event (PRD §6): shared significant words are a
+// candidate match. Conflicting accounts stay in one cluster; unrelated events
+// that merely share a broad topic stay apart via the overlap threshold.
+export function clusterReports(reports: Headline[]): ReportCluster[] {
+  const clusters: StoryCluster[] = [];
+  const wordSets: Set<string>[] = [];
+
+  for (const headline of reports) {
+    const words = significantWords(headline.title);
+    const sig = signature(words);
+    const wordSet = new Set(words);
+
+    let matched: StoryCluster | undefined;
+    for (let i = 0; i < clusters.length; i++) {
+      if (
+        clusters[i].signature === sig ||
+        overlapScore(wordSets[i], wordSet) >= 0.6
+      ) {
+        matched = clusters[i];
+        for (const w of wordSet) wordSets[i].add(w);
+        break;
+      }
+    }
+
+    if (matched) {
+      matched.members.push(headline);
+      matched.sources.add(headline.source);
+    } else {
+      clusters.push({
+        members: [headline],
+        sources: new Set([headline.source]),
+        signature: sig,
+      });
+      wordSets.push(wordSet);
+    }
+  }
+
+  const ordered = [...clusters].sort((a, b) => {
+    if (a.sources.size !== b.sources.size) return b.sources.size - a.sources.size;
+    return mostRecentTime(b) - mostRecentTime(a);
+  });
+
+  return ordered.map((c) => ({
+    members: c.members,
+    sources: Array.from(c.sources),
+    representative: representative(c),
+    words: Array.from(wordSets[clusters.indexOf(c)]).slice(0, 24),
+  }));
+}
+
 export async function selectTopStories(limit = 10): Promise<Headline[]> {
   const headlines = await fetchAllHeadlines();
 

@@ -1,0 +1,26 @@
+name: Test Story Generation
+
+# Manual harness for the PRD v2 evidence pipeline: drafts one story from a
+# live cluster (draft -> critic -> gate) and prints the result. No Firestore
+# writes, no publishing.
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: "Words to pick a cluster (empty = biggest cluster)"
+        type: string
+        default: ""
+
+jobs:
+  test-story:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - run: npm ci
+      - run: npx tsx scripts/test-story.ts ${{ inputs.query }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -1,4 +1,4 @@
-import type { HistoryDoc } from "./history-generate";
+import type { HistoryDoc } from "./history-types";
 
 const SITE = "thelongview.org";
 const BASE_TAGS = ["history", "markets", "founders", "investing", "signalvsnoise"];

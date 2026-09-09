@@ -17,6 +17,22 @@ export interface FurtherReading {
   link: string;
 }
 
+// Legacy stored shape of the headline-keyed `histories` collection. Read-only
+// since PRD v2: nothing generates new headline-only histories any more.
+export interface HistoryDoc
+  extends Required<
+      Pick<
+        HistoryResponse,
+        "truthHeadline" | "significance" | "significanceReason"
+      >
+    >,
+    Omit<
+      HistoryResponse,
+      "truthHeadline" | "significance" | "significanceReason"
+    > {
+  headline: string;
+}
+
 export interface HistoryResponse {
   topic: string;
   summary: string;

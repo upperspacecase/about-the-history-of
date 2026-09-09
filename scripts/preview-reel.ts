@@ -1,7 +1,7 @@
 import path from "node:path";
 import { renderReel } from "./lib/render-reel";
 import { buildCaption } from "../src/lib/caption";
-import type { HistoryDoc } from "../src/lib/history-generate";
+import type { HistoryDoc } from "../src/lib/history-types";
 import sample from "../remotion/data/sample-history.json";
 
 // Phase 2 smoke test: render the sample story to an MP4 and print its caption.
