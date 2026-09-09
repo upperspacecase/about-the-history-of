@@ -105,13 +105,12 @@ export async function sendSubscribeConfirmation({ to }: { to: string }) {
             <tr>
               <td>
                 ${MASTHEAD}
-                <h1 style="font-size:30px;line-height:1.2;font-weight:700;margin:0 0 18px;letter-spacing:-0.01em;">You&rsquo;re on the list.</h1>
-                <p style="font-size:17px;line-height:1.55;color:#333;margin:0 0 16px;">Each morning we send up to three stories ranked by historical significance: the verdict, the precedent, and the crucial difference.</p>
-                <p style="font-size:17px;line-height:1.55;color:#333;margin:0 0 28px;">It takes less than five minutes to read, and on a quiet day we will say so rather than invent significance.</p>
+                <h1 style="font-size:30px;line-height:1.2;font-weight:700;margin:0 0 18px;letter-spacing:-0.01em;">You&rsquo;re subscribed.</h1>
+                <p style="font-size:17px;line-height:1.55;color:#333;margin:0 0 16px;">We&rsquo;ll send you a short daily briefing on what changed, with the background to make sense of it. You can read the briefing in the email or open a story for its sources and fuller history.</p>
+                <p style="font-size:17px;line-height:1.55;color:#333;margin:0 0 28px;">When a familiar story changes, we&rsquo;ll explain the update. When we can&rsquo;t verify something, we&rsquo;ll say so.</p>
                 <p style="margin:0 0 28px;">
-                  <a href="https://thelongview.org" style="display:inline-block;background:#c0392b;color:#ffffff;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;font-weight:600;padding:12px 22px;border-radius:6px;">Read today&rsquo;s Long View</a>
+                  <a href="https://thelongview.org" style="display:inline-block;background:#c0392b;color:#ffffff;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;font-weight:600;padding:12px 22px;border-radius:6px;">Read the latest briefing</a>
                 </p>
-                <p style="font-size:14px;line-height:1.55;color:#6b6b6b;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Know what changed. Ignore what didn&rsquo;t.</p>
               </td>
             </tr>
           </table>
@@ -124,53 +123,67 @@ export async function sendSubscribeConfirmation({ to }: { to: string }) {
   </body>
 </html>`;
 
-  const text = `You're on the list.
+  const text = `You're subscribed.
 
-Each morning we send up to three stories ranked by historical significance: the verdict, the precedent, and the crucial difference.
+We'll send you a short daily briefing on what changed, with the background to make sense of it. You can read the briefing in the email or open a story for its sources and fuller history.
 
-It takes less than five minutes to read, and on a quiet day we will say so rather than invent significance.
+When a familiar story changes, we'll explain the update. When we can't verify something, we'll say so.
 
-Read today's Long View: https://thelongview.org
+Read the latest briefing: https://thelongview.org
 
 The Long View
 
-Know what changed. Ignore what didn't.`;
+You signed up at thelongview.org.`;
 
   await resend.emails.send({
     from: FROM,
     to,
-    subject: "You're on The Long View list",
+    subject: "You're subscribed to The Long View",
     html,
     text,
   });
 }
 
 export interface DigestStory {
-  /** The original source headline. */
-  headline: string;
-  publisher?: string;
-  /** The Long View verdict headline. */
-  truthHeadline: string;
-  significance: number;
-  /** Verbal significance label; shown more prominently than the number. */
-  label: string;
-  significanceReason: string;
-  confidence?: string;
-  role?: "shift" | "pattern" | "noise";
+  /** The Long View editorial headline. */
+  editorialHeadline: string;
+  whatChanged: string;
+  whyItMatters: string;
+  /** The material uncertainty, when present. */
+  uncertainty?: string;
+  /** Absolute URL of the exact published story version. */
+  versionUrl: string;
 }
 
-const ROLE_KICKERS: Record<NonNullable<DigestStory["role"]>, string> = {
-  shift: "The shift",
-  pattern: "The pattern",
-  noise: "The noise check",
-};
+export interface DigestEdition {
+  /** YYYY-MM-DD edition id. */
+  id: string;
+  readingMinutes: number;
+  quiet: boolean;
+  limitedCoverage?: boolean;
+}
 
+function editionDateLabel(id: string): string {
+  return new Date(`${id}T12:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  });
+}
+
+/**
+ * The daily email IS the briefing (§9): what changed and essential context
+ * per story, not a list of teasers. Each item links to the same story
+ * version shown in the edition.
+ */
 export async function sendDailyDigestEmail({
   to,
+  edition,
   stories,
   unsubscribeUrl,
 }: {
   to: string;
+  edition: DigestEdition;
   stories: DigestStory[];
   unsubscribeUrl: string;
 }) {
@@ -183,38 +196,36 @@ export async function sendDailyDigestEmail({
   const site = "https://thelongview.org";
   const sans =
     "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+  const dateLabel = editionDateLabel(edition.id);
+  const quietDay = edition.quiet || stories.length === 0;
 
-  const quietDay = stories.length === 0;
+  const coverageNotice = edition.limitedCoverage
+    ? `<p style="font-size:14px;line-height:1.5;color:#8a6d3b;margin:0 0 20px;">We couldn&rsquo;t review all of our usual sources. This edition may miss important developments.</p>`
+    : "";
 
   const storyBlocks = stories
     .map((s) => {
-      const link = `${site}/history?headline=${encodeURIComponent(s.headline)}`;
-      const kicker = s.role ? ROLE_KICKERS[s.role] : "Today";
-      const publisher = s.publisher ? `${s.publisher}: ` : "";
-      const confidence = s.confidence ? ` &middot; ${s.confidence} confidence` : "";
+      const uncertainty = s.uncertainty
+        ? `<p style="font-size:14px;line-height:1.5;color:#6b6b6b;margin:0 0 10px;">${s.uncertainty}</p>`
+        : "";
       return `
         <tr><td style="padding:0 0 30px;">
-          <p style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#c0392b;margin:0 0 8px;font-family:${sans};">${kicker}</p>
-          <p style="font-size:14px;line-height:1.4;color:#6b6b6b;text-decoration:line-through;margin:0 0 6px;">${publisher}${s.headline}</p>
-          <p style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#15803d;margin:0 0 2px;font-family:${sans};">Our read</p>
-          <a href="${link}" style="display:block;font-size:22px;line-height:1.3;font-weight:700;color:#15803d;text-decoration:none;margin:0 0 10px;">${s.truthHeadline}</a>
-          <p style="font-size:16px;font-weight:700;color:#111;margin:0 0 2px;">${s.label}</p>
-          <p style="font-size:12px;color:#6b6b6b;margin:0 0 8px;font-family:${sans};">Provisional significance: ${s.significance}/10${confidence}</p>
-          <p style="font-size:15px;line-height:1.5;color:#555;margin:0 0 10px;">${s.significanceReason}</p>
-          <a href="${link}" style="font-size:14px;color:#c0392b;text-decoration:none;font-weight:600;font-family:${sans};">Precedent, score breakdown and sources &rarr;</a>
+          <a href="${s.versionUrl}" style="display:block;font-size:22px;line-height:1.3;font-weight:700;color:#111111;text-decoration:none;margin:0 0 10px;">${s.editorialHeadline}</a>
+          <p style="font-size:15px;line-height:1.55;color:#333;margin:0 0 8px;"><strong>What changed:</strong> ${s.whatChanged}</p>
+          <p style="font-size:15px;line-height:1.55;color:#333;margin:0 0 8px;"><strong>Why it matters:</strong> ${s.whyItMatters}</p>
+          ${uncertainty}
+          <a href="${s.versionUrl}" style="font-size:14px;color:#c0392b;text-decoration:none;font-weight:600;font-family:${sans};">Read the full story and sources &rarr;</a>
         </td></tr>`;
     })
     .join("");
 
-  const heading = quietDay
-    ? "A quiet day"
-    : stories.length === 1
-      ? "The one story that matters today"
-      : `The ${stories.length} stories that matter today`;
-
   const intro = quietDay
-    ? `<p style="font-size:15px;line-height:1.55;color:#555;margin:0 0 8px;">Nothing that broke overnight cleared our bar for significance. That is a real conclusion, not a gap: today you can safely ignore the noise.</p>`
-    : `<p style="font-size:15px;color:#6b6b6b;margin:0 0 28px;">Ranked by historical significance. Read in under five minutes.</p>`;
+    ? `<p style="font-size:15px;line-height:1.55;color:#555;margin:0 0 8px;">Among the stories we reviewed, we found no new developments substantial enough for another briefing. You can explore the background in the <a href="${site}/archive" style="color:#c0392b;">archive</a>.</p>`
+    : `<p style="font-size:14px;color:#6b6b6b;margin:0 0 24px;">${dateLabel} &middot; About ${edition.readingMinutes} ${edition.readingMinutes === 1 ? "minute" : "minutes"}</p>`;
+
+  const heading = quietDay
+    ? "No substantial updates in this edition"
+    : "Today's briefing";
 
   const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:#faf9f6;font-family:Georgia,'Times New Roman',serif;color:#111;">
@@ -224,44 +235,47 @@ export async function sendDailyDigestEmail({
         ${MASTHEAD}
         <h1 style="font-size:26px;line-height:1.2;font-weight:700;margin:0 0 6px;">${heading}</h1>
         ${intro}
+        ${coverageNotice}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${storyBlocks}</table>
-        <p style="border-top:1px solid #e0ddd8;padding-top:20px;font-size:14px;color:#6b6b6b;margin:8px 0 0;font-family:${sans};">Know what changed. Ignore what didn&rsquo;t. &mdash; <a href="${site}" style="color:#c0392b;text-decoration:none;">thelongview.org</a></p>
-        <p style="padding-top:14px;font-size:11px;line-height:1.5;color:#9a9a9a;margin:0;font-family:${sans};">The Long View is produced by an automated analysis system using linked reporting and historical sources. Every story passes automated sourcing, consistency, similarity, and confidence checks. Analysis remains provisional and may be updated as evidence changes.</p>
+        <p style="border-top:1px solid #e0ddd8;padding-top:20px;font-size:15px;font-weight:700;color:#111;margin:8px 0 4px;">You're caught up on this briefing.</p>
+        <p style="font-size:13px;color:#6b6b6b;margin:0 0 12px;font-family:${sans};"><a href="${site}/briefing/${edition.id}" style="color:#c0392b;text-decoration:none;">Read this edition online</a></p>
+        <p style="font-size:11px;line-height:1.5;color:#9a9a9a;margin:0;font-family:${sans};">Prepared with AI using the linked sources. Our analysis can be wrong and may change as evidence develops. How we work: <a href="${site}/how-it-works" style="color:#9a9a9a;">${site.replace("https://", "")}/how-it-works</a></p>
       </td></tr>
     </table>
     <p style="font-size:11px;color:#9a9a9a;margin:18px 0 0;font-family:${sans};">
-      You signed up for the daily Long View. <a href="${unsubscribeUrl}" style="color:#9a9a9a;">Unsubscribe</a>.<br/>
+      You signed up for The Long View briefing. <a href="${unsubscribeUrl}" style="color:#9a9a9a;">Unsubscribe</a>.<br/>
       The Long View &middot; 129 Pritchards Rd, London, UK
     </p>
   </td></tr></table>
 </body></html>`;
 
-  const subject = quietDay
-    ? "Today's Long View: a quiet day"
-    : stories.length === 1
-      ? "Today's Long View: the one story that matters"
-      : `Today's Long View: the ${stories.length} stories that matter`;
+  const lead = quietDay
+    ? "No substantial updates"
+    : stories[0].editorialHeadline.slice(0, 60);
+  const subject = `The Long View · ${dateLabel} · ${lead}`;
 
   const text = quietDay
-    ? "A quiet day.\n\nNothing that broke overnight cleared our bar for significance. That is a real conclusion, not a gap: today you can safely ignore the noise.\n\nKnow what changed. Ignore what didn't. thelongview.org\nUnsubscribe: " +
-      unsubscribeUrl
-    : `${heading}. Ranked by historical significance.\n\n` +
+    ? `No substantial updates in this edition.\n\nAmong the stories we reviewed, we found no new developments substantial enough for another briefing. Explore the background: ${site}/archive\n\nPrepared with AI using linked sources. How we work: ${site}/how-it-works\nUnsubscribe: ${unsubscribeUrl}`
+    : `The Long View · ${dateLabel} · About ${edition.readingMinutes} min\n\n` +
       stories
-        .map((s) => {
-          const kicker = s.role ? ROLE_KICKERS[s.role] : "Today";
-          const confidence = s.confidence ? ` / ${s.confidence} confidence` : "";
-          return `${kicker}\n${s.publisher ? `${s.publisher}: ` : ""}${s.headline}\nOur read: ${s.truthHeadline}\n${s.label}. Provisional significance ${s.significance}/10${confidence}\n${s.significanceReason}\n${site}/history?headline=${encodeURIComponent(s.headline)}`;
-        })
+        .map(
+          (s) =>
+            `${s.editorialHeadline}\nWhat changed: ${s.whatChanged}\nWhy it matters: ${s.whyItMatters}${s.uncertainty ? `\n${s.uncertainty}` : ""}\nRead the full story and sources: ${s.versionUrl}`
+        )
         .join("\n\n") +
-      `\n\nKnow what changed. Ignore what didn't. thelongview.org\nUnsubscribe: ${unsubscribeUrl}`;
+      `\n\nYou're caught up on this briefing.\nRead this edition online: ${site}/briefing/${edition.id}\n\nPrepared with AI using the linked sources. Our analysis can be wrong and may change as evidence develops. How we work: ${site}/how-it-works\nUnsubscribe: ${unsubscribeUrl}`;
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: FROM,
     to,
     subject,
     html,
     text,
   });
+  if (result.error) {
+    throw new Error(`Resend error: ${result.error.message}`);
+  }
+  return result.data?.id;
 }
 
 /**

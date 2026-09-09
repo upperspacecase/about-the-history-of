@@ -58,7 +58,17 @@ export async function selectTopStories(limit = 10): Promise<Headline[]> {
  */
 export async function selectTopClusters(limit = 10): Promise<TopCluster[]> {
   const headlines = await fetchAllHeadlines();
+  return clusterHeadlines(headlines, limit);
+}
 
+/**
+ * Pure clustering over an already-fetched report pool (the edition pipeline
+ * fetches with provenance and coverage stats via fetchAllReports).
+ */
+export function clusterHeadlines(
+  headlines: Headline[],
+  limit = 10
+): TopCluster[] {
   const clusters: StoryCluster[] = [];
   const wordSets: Set<string>[] = [];
 

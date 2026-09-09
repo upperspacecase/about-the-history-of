@@ -80,14 +80,21 @@ architecture on `prd-v2`.
       generateStory returns no-material-change as a first-class outcome
 - [ ] pipelineRuns records land in Stage 4 (publish-edition script)
 
-### Stage 3 — public reading experience
-- [ ] / = latest edition (server component; states; ending; email invite);
-      LEGACY_HOMEPAGE=1 flag renders old page
-- [ ] /briefing/[date], /story/[slug] (+?version=), /archive, /how-it-works
-- [ ] /api/briefing, /api/stories, /api/story/[id], /api/corrections/report
-- [ ] §10 copy pack; paywall out of reading journey; account page for existing
-      subscribers; layout metadata; /history & /preview legacy handling
-- [ ] Remove significance dots/score from default reader UI
+### Stage 3 — public reading experience [DONE iter 3, commit fe11996]
+- [x] / = latest edition (server component, force-dynamic; quiet/partial/
+      delayed/unavailable states; caught-up ending; email invite);
+      LEGACY_HOMEPAGE=1 renders src/components/legacy-home.tsx
+- [x] /briefing/[date], /story/[slug]?version=, /archive (stories+editions
+      tabs, token search w/ pagination), /how-it-works, /account
+- [x] /api/briefing (latest/date/list), /api/stories, /api/story/[id],
+      /api/corrections/report (create-only per-hour dedupe)
+- [x] §10 copy; paywall out of reading journey (PaymentPopup only reachable
+      via legacy flag); /history legacy-labelled + redirects to mapped story;
+      /preview redirects home; layout metadata per §10
+- [x] Numeric significance/dots absent from new reader UI (legacy /history
+      page still shows SignificanceLabel — archived format, acceptable)
+- [x] npm run build green; lint: only 7 pre-existing problems (remotion demo
+      + legacy-home)
 
 ### Stage 4 — distribution + ops
 - [ ] scripts/publish-edition.ts replacing daily-post story selection

@@ -230,9 +230,143 @@ function WeeklyReportPanel({ data }: { data: AdminMetricsResponse }) {
   );
 }
 
+interface PipelineData {
+  runs: {
+    id: string;
+    editionId: string;
+    startedAt: string;
+    stages: Record<string, string>;
+    decisions: { clusterTitle: string; outcome: string; reason: string }[];
+    errors: string[];
+    dryRun: boolean;
+  }[];
+  editions: {
+    id: string;
+    status: string;
+    storyCount: number;
+    coverage: { feedsAttempted: number; feedsSucceeded: number };
+  }[];
+  errorReports: {
+    id: string;
+    versionId: string;
+    text: string;
+    link: string;
+    createdAt: string;
+  }[];
+  deliveries: {
+    id: string;
+    channel: string;
+    status: string;
+    attempts: number;
+  }[];
+}
+
+function PipelinePanel({ pipeline }: { pipeline: PipelineData }) {
+  const run = pipeline.runs[0];
+  return (
+    <div className="space-y-6">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wider text-muted border-b border-border">
+              <th className="py-2 pr-4">Edition</th>
+              <th className="py-2 pr-4">Status</th>
+              <th className="py-2 pr-4">Stories</th>
+              <th className="py-2 pr-4">Feeds</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pipeline.editions.map((e) => (
+              <tr key={e.id} className="border-b border-border/60">
+                <td className="py-2 pr-4">
+                  <Link href={`/briefing/${e.id}`} className="text-accent hover:underline">
+                    {e.id}
+                  </Link>
+                </td>
+                <td className="py-2 pr-4">{e.status}</td>
+                <td className="py-2 pr-4">{e.storyCount}</td>
+                <td className="py-2 pr-4">
+                  {e.coverage.feedsSucceeded}/{e.coverage.feedsAttempted}
+                </td>
+              </tr>
+            ))}
+            {pipeline.editions.length === 0 && (
+              <tr>
+                <td colSpan={4} className="py-3 text-muted">
+                  No editions published yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {run && (
+        <div className="border border-border rounded p-4">
+          <p className="text-xs uppercase tracking-widest text-muted">
+            Latest run · {run.editionId}
+            {run.dryRun ? " · dry run" : ""}
+          </p>
+          <p className="mt-2 text-sm">
+            {Object.entries(run.stages)
+              .map(([stage, outcome]) => `${stage}: ${outcome}`)
+              .join(" · ")}
+          </p>
+          {run.decisions.length > 0 && (
+            <ul className="mt-3 space-y-1 text-xs text-muted">
+              {run.decisions.map((d, i) => (
+                <li key={i}>
+                  <span className="uppercase tracking-wider text-accent mr-2">
+                    {d.outcome}
+                  </span>
+                  {d.clusterTitle} — {d.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+          {run.errors.length > 0 && (
+            <ul className="mt-3 space-y-1 text-xs text-red-600">
+              {run.errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {pipeline.errorReports.length > 0 && (
+        <div className="border border-border rounded p-4">
+          <p className="text-xs uppercase tracking-widest text-muted mb-2">
+            Open reader error reports ({pipeline.errorReports.length})
+          </p>
+          <ul className="space-y-2 text-sm">
+            {pipeline.errorReports.map((r) => (
+              <li key={r.id}>
+                <span className="text-xs text-muted mr-2">{r.versionId}</span>
+                {r.text}
+                {r.link && (
+                  <a
+                    href={r.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline ml-2"
+                  >
+                    evidence
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { user, loading, signIn, getIdToken } = useAuth();
   const [data, setData] = useState<AdminMetricsResponse | null>(null);
+  const [pipeline, setPipeline] = useState<PipelineData | null>(null);
   const [state, setState] = useState<"loading" | "error" | "ready">("loading");
 
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL;
@@ -249,17 +383,26 @@ export default function AdminPage() {
         setState("error");
         return;
       }
-      const res = await fetch("/api/admin/metrics", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const [res, pipelineRes] = await Promise.all([
+        fetch("/api/admin/metrics", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("/api/admin/pipeline", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
       if (cancelled) return;
       if (!res.ok) {
         setState("error");
         return;
       }
       const json = (await res.json()) as AdminMetricsResponse;
+      const pipelineJson = pipelineRes.ok
+        ? ((await pipelineRes.json()) as PipelineData)
+        : null;
       if (cancelled) return;
       setData(json);
+      setPipeline(pipelineJson);
       setState("ready");
     })().catch(() => {
       if (!cancelled) setState("error");
@@ -344,6 +487,13 @@ export default function AdminPage() {
               <StatCard label="Customers" value={fmt(data.totals.customers)} />
               <StatCard label="Signups (7d)" value={fmt(weekSignups)} />
             </div>
+
+            {pipeline && (
+              <>
+                <SectionTitle>Pipeline</SectionTitle>
+                <PipelinePanel pipeline={pipeline} />
+              </>
+            )}
 
             <SectionTitle>Follower trend</SectionTitle>
             <FollowerTrend daily={data.daily} />
