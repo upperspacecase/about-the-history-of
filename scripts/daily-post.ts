@@ -148,7 +148,7 @@ async function main() {
       continue;
     }
 
-    const evidence = buildEvidencePackage(cluster.members, rep);
+    const evidence = await buildEvidencePackage(cluster.members, rep);
     if (!evidence.ok) {
       withheld.push(`"${rep.title}": ${evidence.rejected}`);
       continue;

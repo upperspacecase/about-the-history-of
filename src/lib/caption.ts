@@ -1,4 +1,4 @@
-import type { HistoryDoc } from "./history-generate";
+import type { StoryDoc as HistoryDoc } from "./story-generate";
 import { significanceLabel } from "./significance";
 
 const SITE = "thelongview.org";

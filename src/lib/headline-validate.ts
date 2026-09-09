@@ -153,10 +153,17 @@ export function validateHeadline(
     }
   }
 
-  if (overlapRatio(headline, context.sourceHeadline) >= 0.6) {
+  // A plain restatement of the development is the intended editorial
+  // headline under PRD v2 (the worked example is exactly that), so
+  // resembling the source headline is no longer a failure. An identical
+  // copy still fails: the headline must be our own sentence.
+  if (
+    headline.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() ===
+    context.sourceHeadline.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+  ) {
     failures.push({
       code: "paraphrases-source",
-      detail: "substantially paraphrases the source headline",
+      detail: "identical to the source headline",
     });
   }
 
