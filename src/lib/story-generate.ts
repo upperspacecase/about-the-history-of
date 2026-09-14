@@ -14,6 +14,7 @@ import {
   ANALYSIS_PROMPT,
   buildHeadlinePrompt,
   CRITIC_PROMPT,
+  PIPELINE_MODEL,
 } from "./research-prompt";
 import {
   evidenceToPrompt,
@@ -34,7 +35,7 @@ import { researchBackground, type ResearchNotes } from "./research";
  * human queue and never published to fill a quota.
  */
 
-const MODEL = "claude-opus-5";
+const MODEL = PIPELINE_MODEL;
 
 const client = new Anthropic();
 

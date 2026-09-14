@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { evidenceToPrompt, type EvidencePackage } from "./evidence";
+import { PIPELINE_MODEL } from "./research-prompt";
 
 /**
  * Grounded historical research (EVD 06). Before analysis, an opus call with
@@ -9,7 +10,7 @@ import { evidenceToPrompt, type EvidencePackage } from "./evidence";
  * response stream, so a link from model memory can never enter a story.
  */
 
-const MODEL = "claude-opus-5";
+const MODEL = PIPELINE_MODEL;
 const MAX_SEARCHES = 8;
 const MAX_PAUSE_RESUMES = 6;
 

@@ -58,6 +58,7 @@ async function main() {
   const { publishReel } = await import("./lib/meta-publish");
   const { sendDailyDigest } = await import("../src/lib/digest");
   const { sendRunReport } = await import("../src/lib/resend");
+  const { PIPELINE_MODEL } = await import("../src/lib/research-prompt");
   const { FieldValue } = await import("firebase-admin/firestore");
   type CandidateDecision = import("../src/lib/story-types").CandidateDecision;
   type EditionStatus = import("../src/lib/story-types").EditionStatus;
@@ -466,7 +467,7 @@ async function main() {
     decisions,
     errors,
     dryRun: DRY_RUN,
-    model: "claude-opus-5",
+    model: PIPELINE_MODEL,
   });
   if (!DRY_RUN) {
     await db.collection("locks").doc(`edition-${editionId}`).delete();

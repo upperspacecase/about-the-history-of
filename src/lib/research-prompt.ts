@@ -21,6 +21,11 @@
 // Never use en dashes or em dashes anywhere in generated copy.
 // =============================================================================
 
+// One model for every pipeline stage (research, analysis, headline, critic).
+// claude-sonnet-5 replaced claude-opus-5 on 2026-09-14 to cut cost; it
+// supports the same web_search_20260209 tool and structured outputs.
+export const PIPELINE_MODEL = "claude-sonnet-5";
+
 export const ANALYSIS_PROMPT = `You are the analysis stage of The Long View, an automated daily briefing whose promise is: understand the news, get on with your day. The reader wants to know what changed, why it matters, and enough background to make sense of it, without following the news all day.
 
 You receive two inputs:
