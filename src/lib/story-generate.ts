@@ -11,32 +11,34 @@ import { BANNED_PHRASES, detectOverusedLanguage } from "./banned-language";
 import { validateHeadline } from "./headline-validate";
 import { validateStory } from "./story-validate";
 import {
+  ANALYSIS_MODEL,
   ANALYSIS_PROMPT,
   buildHeadlinePrompt,
+  CHECK_EFFORT,
+  CHECK_MODEL,
   CRITIC_PROMPT,
-  PIPELINE_EFFORT,
-  PIPELINE_MODEL,
+  REVISE_PROMPT,
+  TRIAGE_PROMPT,
 } from "./research-prompt";
 import {
   evidenceToPrompt,
   hasTierOnePublisher,
   type EvidencePackage,
 } from "./evidence";
-import { researchBackground, type ResearchNotes } from "./research";
+import { verifyHistory, type HistoryVerification } from "./research";
 
 /**
- * The fully automated production pipeline for one story (PRD v2 §7):
+ * The fully automated production pipeline for one story:
  *
- *   evidence package -> grounded research (web search, verified URLs) ->
- *   analysis -> historical-link verification -> headline candidates ->
- *   deterministic validation -> automated critic -> publish or withhold.
+ *   evidence package -> analysis (strong model, history from its own
+ *   knowledge) -> web verification of the proposed history -> revision only
+ *   when something was contradicted -> headline candidates -> deterministic
+ *   validation -> automated critic -> publish or withhold.
  *
  * The analysis is generated first and the headline afterward. A story that
  * fails validation twice is withheld automatically; it is never sent to a
  * human queue and never published to fill a quota.
  */
-
-const MODEL = PIPELINE_MODEL;
 
 const client = new Anthropic();
 
@@ -59,6 +61,20 @@ const FurtherReadingSchema = z.object({
   link: z.string(),
 });
 
+const ScoreBreakdownSchema = z.object({
+  scale: z.number(),
+  durability: z.number(),
+  institutionalChange: z.number(),
+  novelty: z.number(),
+  spillovers: z.number(),
+});
+
+const TriageSchema = z.object({
+  materialChange: z.boolean(),
+  changeReason: z.string(),
+  scoreBreakdown: ScoreBreakdownSchema,
+});
+
 const AnalysisSchema = z.object({
   topic: z.string(),
   /** Specific people, institutions, places central to the story. */
@@ -78,13 +94,7 @@ const AnalysisSchema = z.object({
   uncertainties: z.array(z.string()),
   whatToWatch: z.string(),
   classification: z.enum(EVENT_CLASSIFICATIONS),
-  scoreBreakdown: z.object({
-    scale: z.number(),
-    durability: z.number(),
-    institutionalChange: z.number(),
-    novelty: z.number(),
-    spillovers: z.number(),
-  }),
+  scoreBreakdown: ScoreBreakdownSchema,
   significanceReason: z.string(),
   precedent: z
     .object({
@@ -164,11 +174,15 @@ export type StoryResult =
   | {
       status: "published";
       doc: StoryDoc;
-      research: ResearchNotes;
+      verification: HistoryVerification;
       changeReason?: string;
     }
   | { status: "no-material-change"; reason: string }
   | { status: "withheld"; reasons: string[] };
+
+export type TriageResult =
+  | { status: "candidate"; significance: number }
+  | { status: "no-material-change"; reason: string };
 
 /** Never let an en dash or em dash reach a published field. */
 function stripDashes(text: string): string {
@@ -178,18 +192,63 @@ function stripDashes(text: string): string {
     .replace(/, ([,.])/g, "$1");
 }
 
+function previousAccountToPrompt(
+  previousAccount: StoryGenerationInput["previousAccount"]
+): string {
+  return previousAccount
+    ? [
+        "OUR PREVIOUS PUBLISHED ACCOUNT (write whatChanged as the difference from this; reuse still-accurate background):",
+        JSON.stringify(previousAccount, null, 2),
+      ].join("\n")
+    : "";
+}
+
+/**
+ * Cheap first pass on the check model: score and material-change decision
+ * from the evidence package alone, no history, no web. The edition ranks
+ * the pool on this and pays for full generation only in rank order.
+ */
+export async function triageStory(
+  input: Pick<StoryGenerationInput, "evidence" | "previousAccount">
+): Promise<TriageResult> {
+  const parts = [evidenceToPrompt(input.evidence)];
+  const previousAccountText = previousAccountToPrompt(input.previousAccount);
+  if (previousAccountText) parts.push("", previousAccountText);
+
+  const response = await client.messages.parse({
+    model: CHECK_MODEL,
+    max_tokens: 2048,
+    system: [
+      { type: "text", text: TRIAGE_PROMPT, cache_control: { type: "ephemeral" } },
+    ],
+    messages: [{ role: "user", content: parts.join("\n") }],
+    output_config: {
+      format: zodOutputFormat(TriageSchema),
+      effort: CHECK_EFFORT,
+    },
+  });
+  if (!response.parsed_output) {
+    throw new Error("Triage call returned no parseable output");
+  }
+  const triage = response.parsed_output;
+  if (input.previousAccount && !triage.materialChange) {
+    return {
+      status: "no-material-change",
+      reason: triage.changeReason || "no material development",
+    };
+  }
+  return {
+    status: "candidate",
+    significance: normalizeBreakdown(triage.scoreBreakdown).total,
+  };
+}
+
 async function runAnalysis(
   evidenceText: string,
-  researchText: string,
   previousAccountText: string,
   feedback: string[]
 ): Promise<Analysis> {
   const parts = [evidenceText];
-  parts.push(
-    "",
-    "VERIFIED RESEARCH NOTES (the only permitted source of historical specifics; may be empty):",
-    researchText || "(no verified research notes; return an empty timeline, empty patterns, empty furtherReading, and precedent null)"
-  );
   if (previousAccountText) {
     parts.push("", previousAccountText);
   }
@@ -203,14 +262,13 @@ async function runAnalysis(
   }
 
   const response = await client.messages.parse({
-    model: MODEL,
+    model: ANALYSIS_MODEL,
     max_tokens: 16000,
-    system: ANALYSIS_PROMPT,
+    system: [
+      { type: "text", text: ANALYSIS_PROMPT, cache_control: { type: "ephemeral" } },
+    ],
     messages: [{ role: "user", content: parts.join("\n") }],
-    output_config: {
-      format: zodOutputFormat(AnalysisSchema),
-      effort: PIPELINE_EFFORT,
-    },
+    output_config: { format: zodOutputFormat(AnalysisSchema) },
   });
   if (!response.parsed_output) {
     throw new Error("Analysis call returned no parseable output");
@@ -219,61 +277,35 @@ async function runAnalysis(
 }
 
 /**
- * Historical grounding gate (EVD 06), enforced in code: a timeline entry or
- * reading item survives only when its link is a URL we actually hold, from
- * the verified research sources or the evidence package itself. Anything
- * else is silently droppable decoration, recorded for the run log.
+ * Revision after verification, on the analysis model, only when at least
+ * one historical claim was contradicted. The revised analysis replaces the
+ * original; the critic then sees the findings alongside the story.
  */
-function enforceHistoricalGrounding(
+async function reviseAnalysis(
   analysis: Analysis,
-  evidence: EvidencePackage,
-  research: ResearchNotes
-): { analysis: Analysis; dropped: string[] } {
-  const allowed = new Set<string>([
-    ...research.sources.map((s) => s.url),
-    ...evidence.sources.map((s) => s.url),
-  ]);
-  const dropped: string[] = [];
+  verification: HistoryVerification
+): Promise<Analysis> {
+  const user = [
+    "YOUR ANALYSIS:",
+    JSON.stringify(analysis, null, 2),
+    "",
+    "VERIFICATION FINDINGS (P = precedent, T1.. = timeline entries in order, N1.. = patterns in order):",
+    verification.summary,
+  ].join("\n");
 
-  const timeline = analysis.timeline.filter((t) => {
-    if (allowed.has(t.link)) return true;
-    dropped.push(`timeline: ${t.year} ${t.title}`);
-    return false;
+  const response = await client.messages.parse({
+    model: ANALYSIS_MODEL,
+    max_tokens: 16000,
+    system: [
+      { type: "text", text: REVISE_PROMPT, cache_control: { type: "ephemeral" } },
+    ],
+    messages: [{ role: "user", content: user }],
+    output_config: { format: zodOutputFormat(AnalysisSchema) },
   });
-  const furtherReading = analysis.furtherReading.filter((f) => {
-    if (allowed.has(f.link)) return true;
-    dropped.push(`furtherReading: ${f.title}`);
-    return false;
-  });
-
-  // A precedent needs research support: with no verified notes at all, a
-  // named precedent can only have come from model memory.
-  let precedent = analysis.precedent;
-  let precedentStrength = analysis.precedentStrength;
-  if (precedent && research.sources.length === 0) {
-    dropped.push(`precedent: ${precedent.name}`);
-    precedent = null;
-    precedentStrength = "none";
+  if (!response.parsed_output) {
+    throw new Error("Revision call returned no parseable output");
   }
-  // Patterns are historical mechanisms; without research support they are
-  // model memory too.
-  let patterns = analysis.patterns;
-  if (patterns.length > 0 && research.sources.length === 0) {
-    for (const p of patterns) dropped.push(`pattern: ${p.title}`);
-    patterns = [];
-  }
-
-  return {
-    analysis: {
-      ...analysis,
-      timeline,
-      furtherReading,
-      precedent,
-      precedentStrength,
-      patterns,
-    },
-    dropped,
-  };
+  return response.parsed_output;
 }
 
 interface HeadlineAttempt {
@@ -302,13 +334,13 @@ async function generateValidatedHeadline(options: {
     });
 
     const response = await client.messages.parse({
-      model: MODEL,
-      max_tokens: 16000,
+      model: CHECK_MODEL,
+      max_tokens: 2048,
       system,
       messages: [{ role: "user", content: user }],
       output_config: {
         format: zodOutputFormat(HeadlineCandidatesSchema),
-        effort: PIPELINE_EFFORT,
+        effort: CHECK_EFFORT,
       },
     });
 
@@ -338,15 +370,15 @@ async function generateValidatedHeadline(options: {
 
 async function runCritic(
   evidenceText: string,
-  researchText: string,
+  verificationSummary: string,
   doc: StoryDoc
 ): Promise<{ pass: boolean; failures: { code: string; detail: string }[] }> {
   const user = [
     "EVIDENCE PACKAGE:",
     evidenceText,
     "",
-    "VERIFIED RESEARCH NOTES (the only permitted source of historical specifics):",
-    researchText || "(none; the story must contain no historical specifics)",
+    "HISTORICAL VERIFICATION FINDINGS (P = precedent, T1.. = timeline entries in order, N1.. = patterns in order; already applied to the story):",
+    verificationSummary || "(no historical claims were checked)",
     "",
     "COMPLETE STORY (as it would publish):",
     JSON.stringify(
@@ -377,13 +409,15 @@ async function runCritic(
   ].join("\n");
 
   const response = await client.messages.parse({
-    model: MODEL,
-    max_tokens: 16000,
-    system: CRITIC_PROMPT,
+    model: CHECK_MODEL,
+    max_tokens: 4096,
+    system: [
+      { type: "text", text: CRITIC_PROMPT, cache_control: { type: "ephemeral" } },
+    ],
     messages: [{ role: "user", content: user }],
     output_config: {
       format: zodOutputFormat(CriticSchema),
-      effort: PIPELINE_EFFORT,
+      effort: CHECK_EFFORT,
     },
   });
   if (!response.parsed_output) {
@@ -455,65 +489,22 @@ function assembleDoc(
   };
 }
 
-export type TriageResult =
-  | { status: "candidate"; significance: number }
-  | { status: "no-material-change"; reason: string };
-
-/**
- * Cheap first pass: one analysis call on the evidence package alone, no web
- * research. Gives the significance score and the material-change decision so
- * the edition can rank the pool and pay for full generation only on the
- * clusters that can still make the cut.
- */
-export async function triageStory(
-  input: Pick<StoryGenerationInput, "evidence" | "previousAccount">
-): Promise<TriageResult> {
-  const previousAccountText = input.previousAccount
-    ? [
-        "OUR PREVIOUS PUBLISHED ACCOUNT (write whatChanged as the difference from this; reuse still-accurate background):",
-        JSON.stringify(input.previousAccount, null, 2),
-      ].join("\n")
-    : "";
-  const analysis = await runAnalysis(
-    evidenceToPrompt(input.evidence),
-    "",
-    previousAccountText,
-    []
-  );
-  if (input.previousAccount && !analysis.materialChange) {
-    return {
-      status: "no-material-change",
-      reason: analysis.changeReason || "no material development",
-    };
-  }
-  return {
-    status: "candidate",
-    significance: normalizeBreakdown(analysis.scoreBreakdown).total,
-  };
-}
-
 export async function generateStory(
   input: StoryGenerationInput
 ): Promise<StoryResult> {
   const evidenceText = evidenceToPrompt(input.evidence);
   const overused = detectOverusedLanguage(input.recentHeadlines);
   const dynamicBans = [...overused.words, ...overused.bigrams];
-
-  const research = await researchBackground(input.evidence);
-
-  const previousAccountText = input.previousAccount
-    ? [
-        "OUR PREVIOUS PUBLISHED ACCOUNT (write whatChanged as the difference from this; reuse still-accurate background):",
-        JSON.stringify(input.previousAccount, null, 2),
-      ].join("\n")
-    : "";
+  const previousAccountText = previousAccountToPrompt(input.previousAccount);
 
   let feedback: string[] = [];
+  // The web check runs once per story: the history does not change between
+  // validation attempts unless the critic sends the analysis back.
+  let verification: HistoryVerification | null = null;
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const rawAnalysis = await runAnalysis(
       evidenceText,
-      research.notes,
       previousAccountText,
       feedback
     );
@@ -526,12 +517,34 @@ export async function generateStory(
       };
     }
 
-    const grounding = enforceHistoricalGrounding(
-      rawAnalysis,
-      input.evidence,
-      research
+    if (!verification || attempt > 0) {
+      verification = await verifyHistory({
+        timeline: rawAnalysis.timeline,
+        patterns: rawAnalysis.patterns,
+        precedent: rawAnalysis.precedent,
+      });
+    }
+    const contradicted = verification.verdicts.filter(
+      (v) => v.verdict === "contradicted"
     );
-    const analysis = grounding.analysis;
+    const analysis =
+      contradicted.length > 0
+        ? await reviseAnalysis(rawAnalysis, verification)
+        : rawAnalysis;
+
+    // The central comparison failed and the revision found no honest
+    // replacement: reject rather than publish a story built on it.
+    if (
+      contradicted.some((v) => v.id === "P") &&
+      !analysis.precedent
+    ) {
+      return {
+        status: "withheld",
+        reasons: [
+          `central comparison contradicted: ${contradicted.find((v) => v.id === "P")?.note ?? ""}`,
+        ],
+      };
+    }
 
     const breakdownTotal = normalizeBreakdown(analysis.scoreBreakdown);
     const confidence = computeConfidence({
@@ -547,8 +560,7 @@ export async function generateStory(
         analysis.precedentStrength === "none"
           ? "weak"
           : analysis.precedentStrength,
-      removedClaims:
-        analysis.unsupportedClaimsRemoved.length + grounding.dropped.length,
+      removedClaims: analysis.unsupportedClaimsRemoved.length,
     });
 
     if (confidence.level === "Low" && !input.allowLowConfidence) {
@@ -599,12 +611,12 @@ export async function generateStory(
       continue;
     }
 
-    const critic = await runCritic(evidenceText, research.notes, doc);
+    const critic = await runCritic(evidenceText, verification.summary, doc);
     if (critic.pass) {
       return {
         status: "published",
         doc,
-        research,
+        verification,
         changeReason: input.previousAccount
           ? stripDashes(rawAnalysis.changeReason)
           : undefined,

@@ -1,49 +1,43 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { evidenceToPrompt, type EvidencePackage } from "./evidence";
-import { PIPELINE_EFFORT, PIPELINE_MODEL } from "./research-prompt";
+import { CHECK_MODEL, VERIFY_EFFORT } from "./research-prompt";
 
 /**
- * Grounded historical research (EVD 06). Before analysis, an opus call with
- * the web_search server tool gathers the background and precedent material a
- * story may need, returning notes plus the sources it actually received.
- * Every URL is code-verified against the search results collected from the
- * response stream, so a link from model memory can never enter a story.
+ * Historical verification. The analysis stage proposes history from model
+ * knowledge; this stage treats those recalled facts as candidates and uses
+ * web search to check the dates, the events and the central comparison. It
+ * returns a verdict per claim. Every cited URL is code-verified against the
+ * search results actually received, so a link from model memory can never
+ * be presented as a check.
  */
 
-const MODEL = PIPELINE_MODEL;
-// Every search iteration re-bills the whole context so far, so this cap is
-// the main cost lever of the pipeline. 3 replaced 8 on 2026-09-22.
-const MAX_SEARCHES = 3;
+// Each search iteration re-bills the whole context so far, so the cap is the
+// main cost lever of this stage.
+const MAX_SEARCHES = 4;
 const MAX_PAUSE_RESUMES = 2;
 
 const client = new Anthropic();
 
-const RESEARCH_PROMPT = `You are the research stage of The Long View, a daily news briefing. You receive an evidence package describing one current news development. Your job is to gather the HISTORICAL and BACKGROUND material that would help explain it: how the situation developed, dated prior events, the closest genuinely comparable precedent, and institutional background.
+const VERIFY_PROMPT = `You are the fact-checking stage of The Long View, a daily news briefing. You receive the historical claims an analyst proposed for one story: a dated timeline, recurring patterns, and one central historical comparison (the precedent). The analyst wrote them from memory. Your job is to check them against the web.
 
-Use the web search tool. Only write down facts that a search result you received supports, and attach the source. If searching yields nothing useful for some angle, say so plainly rather than filling the gap from memory.
+Use the web search tool. Prioritise the central comparison first, then the timeline dates and events. Read the supporting passages you find and look actively for contradictions: a wrong year, a misattributed decision, a comparison that does not hold on the facts. Let the evidence change your view; do not confirm from memory.
 
-Return your findings as plain text notes in this format:
+Return your verdicts as plain text in this format:
 
-FINDINGS:
-- <dated fact or background point> [S1]
-- <another point> [S2]
-...
-
-PRECEDENT CANDIDATES:
-- <named precedent with date range>: <similarity>; <concrete difference> [S3]
-
-GAPS:
-- <angles where search produced nothing reliable>
+VERDICTS:
+<claim id>: confirmed | <S-id> | <one sentence on what the source shows>
+<claim id>: contradicted | <S-id> | <what the source shows instead, specifically>
+<claim id>: unverified | - | <what you searched for and why it stayed open>
 
 SOURCES:
 S1: <exact URL of a search result you received> | <title> | <publisher or site>
 S2: ...
 
 Rules:
-- Every finding cites at least one S-id. Every S-id URL must be a URL that appeared in your search results in this conversation.
+- Use only the claim ids you were given. Give every claim a line.
+- A confirmed or contradicted verdict must cite an S-id whose URL appeared in your search results in this conversation. If you cannot cite one, the verdict is unverified.
 - Prefer primary or reference sources (official records, encyclopedias, major outlets' archives).
-- Keep notes factual and dated. No analysis, no scoring, no headline writing.
-- If the evidence package is about a rapidly developing event, focus on background that will stay true.`;
+- Be specific in contradictions: the corrected date, name or fact, so the analyst can fix the claim individually.
+- Do not rewrite the story and do not add new claims.`;
 
 export interface ResearchSource {
   id: string;
@@ -52,10 +46,46 @@ export interface ResearchSource {
   publisher: string;
 }
 
-export interface ResearchNotes {
-  notes: string; // FINDINGS/PRECEDENT/GAPS sections, with S-ids
-  sources: ResearchSource[]; // only URLs actually received from search
-  discardedSources: number; // S-ids that failed URL verification
+export type ClaimVerdict = {
+  /** T1..Tn timeline entries, N1..Nn patterns, P the precedent. */
+  id: string;
+  verdict: "confirmed" | "contradicted" | "unverified";
+  note: string;
+  sourceUrl?: string;
+};
+
+export interface HistoryVerification {
+  verdicts: ClaimVerdict[];
+  /** Only URLs actually received from search. */
+  sources: ResearchSource[];
+  /** The verdict lines as text, for the revision and critic stages. */
+  summary: string;
+}
+
+export interface HistoricalClaims {
+  timeline: { year: string; title: string; description: string }[];
+  patterns: { title: string; description: string }[];
+  precedent: {
+    name: string;
+    similarity: string;
+    crucialDifference: string;
+  } | null;
+}
+
+export function claimsToPrompt(claims: HistoricalClaims): string {
+  const lines: string[] = ["CLAIMS TO CHECK:"];
+  if (claims.precedent) {
+    lines.push(
+      `P (central comparison): ${claims.precedent.name}. Similarity: ${claims.precedent.similarity} Crucial difference: ${claims.precedent.crucialDifference}`
+    );
+  }
+  claims.timeline.forEach((t, i) => {
+    lines.push(`T${i + 1}: ${t.year}: ${t.title}. ${t.description}`);
+  });
+  claims.patterns.forEach((p, i) => {
+    lines.push(`N${i + 1}: ${p.title}. ${p.description}`);
+  });
+  return lines.join("\n");
 }
 
 function collectSearchUrls(
@@ -80,40 +110,72 @@ function finalText(content: Anthropic.ContentBlock[]): string {
     .join("\n");
 }
 
-function parseSources(text: string): { id: string; url: string; title: string; publisher: string }[] {
-  const out: { id: string; url: string; title: string; publisher: string }[] = [];
+function parseSources(text: string): ResearchSource[] {
+  const out: ResearchSource[] = [];
   const sourceSection = text.split(/^SOURCES:\s*$/m)[1];
   if (!sourceSection) return out;
   const re = /^(S\d+):\s*(\S+)\s*\|\s*([^|]+?)\s*(?:\|\s*(.+?))?\s*$/gm;
   let m: RegExpExecArray | null;
   while ((m = re.exec(sourceSection)) !== null) {
-    out.push({
-      id: m[1],
-      url: m[2],
-      title: m[3] ?? "",
-      publisher: m[4] ?? "",
-    });
+    out.push({ id: m[1], url: m[2], title: m[3] ?? "", publisher: m[4] ?? "" });
   }
   return out;
 }
 
-export async function researchBackground(
-  evidence: EvidencePackage
-): Promise<ResearchNotes> {
+function parseVerdicts(
+  text: string,
+  claimIds: string[],
+  verifiedSources: Map<string, ResearchSource>
+): ClaimVerdict[] {
+  const section = text.split(/^VERDICTS:\s*$/m)[1]?.split(/^SOURCES:\s*$/m)[0] ?? "";
+  const re = /^([TNP]\d*):\s*(confirmed|contradicted|unverified)\s*\|\s*(\S+)\s*\|\s*(.+?)\s*$/gm;
+  const found = new Map<string, ClaimVerdict>();
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(section)) !== null) {
+    const [, id, verdict, sid, note] = m;
+    const source = verifiedSources.get(sid);
+    // A check that cannot cite a received URL is not a check.
+    if (verdict !== "unverified" && !source) {
+      found.set(id, { id, verdict: "unverified", note: `cited ${sid}, not a received search result` });
+      continue;
+    }
+    found.set(id, {
+      id,
+      verdict: verdict as ClaimVerdict["verdict"],
+      note,
+      sourceUrl: source?.url,
+    });
+  }
+  return claimIds.map(
+    (id) => found.get(id) ?? { id, verdict: "unverified", note: "no verdict returned" }
+  );
+}
+
+export async function verifyHistory(
+  claims: HistoricalClaims
+): Promise<HistoryVerification> {
+  const claimIds = [
+    ...(claims.precedent ? ["P"] : []),
+    ...claims.timeline.map((_, i) => `T${i + 1}`),
+    ...claims.patterns.map((_, i) => `N${i + 1}`),
+  ];
+  if (claimIds.length === 0) {
+    return { verdicts: [], sources: [], summary: "" };
+  }
+
   const messages: Anthropic.MessageParam[] = [
-    {
-      role: "user",
-      content: `${evidenceToPrompt(evidence)}\n\nResearch the background now.`,
-    },
+    { role: "user", content: `${claimsToPrompt(claims)}\n\nCheck these claims now.` },
   ];
   const receivedUrls = new Set<string>();
 
   for (let i = 0; i <= MAX_PAUSE_RESUMES; i++) {
     const response = await client.messages.create({
-      model: MODEL,
+      model: CHECK_MODEL,
       max_tokens: 16000,
-      output_config: { effort: PIPELINE_EFFORT },
-      system: RESEARCH_PROMPT,
+      output_config: { effort: VERIFY_EFFORT },
+      system: [
+        { type: "text", text: VERIFY_PROMPT, cache_control: { type: "ephemeral" } },
+      ],
       tools: [
         {
           type: "web_search_20260209",
@@ -131,32 +193,29 @@ export async function researchBackground(
       continue;
     }
     if (response.stop_reason === "refusal") {
-      // Research is optional decoration for the story; fail soft with no
-      // notes rather than blocking the current-event analysis.
-      return { notes: "", sources: [], discardedSources: 0 };
+      break;
     }
 
     const text = finalText(response.content);
     const listed = parseSources(text);
     const verified = listed.filter((s) => receivedUrls.has(s.url));
-    const verifiedIds = new Set(verified.map((s) => s.id));
-
-    // Strip findings whose only citations failed verification, so the
-    // analysis stage never sees an unverifiable claim.
-    const keptLines = text
-      .split("\n")
-      .filter((line) => {
-        const ids = [...line.matchAll(/\[(S\d+)\]/g)].map((m) => m[1]);
-        if (ids.length === 0) return true;
-        return ids.some((id) => verifiedIds.has(id));
-      })
-      .join("\n");
-
+    const verdicts = parseVerdicts(
+      text,
+      claimIds,
+      new Map(verified.map((s) => [s.id, s]))
+    );
     return {
-      notes: keptLines,
+      verdicts,
       sources: verified,
-      discardedSources: listed.length - verified.length,
+      summary: verdicts
+        .map((v) => `${v.id}: ${v.verdict}${v.sourceUrl ? ` (${v.sourceUrl})` : ""}: ${v.note}`)
+        .join("\n"),
     };
   }
-  return { notes: "", sources: [], discardedSources: 0 };
+
+  return {
+    verdicts: claimIds.map((id) => ({ id, verdict: "unverified", note: "verification did not complete" })),
+    sources: [],
+    summary: "",
+  };
 }

@@ -1,12 +1,12 @@
 // The daily edition pipeline (PRD v2 §13). Stages, in order and isolated:
 //
 //   ingest -> cluster -> story resolution -> evidence retrieval ->
-//   triage (one analysis call, ranks the pool) ->
-//   generation (research/analysis/headline/critic, rank order, stops at
-//   the cut) -> selection ->
+//   triage (one cheap call, ranks the pool) ->
+//   generation (analysis/verification/revision/headline/critic, rank order,
+//   stops at the cut) -> selection ->
 //   atomic publication -> email -> reels -> operator report
 //
-// Selection is material change + relevance, at most 5 cards, no role quotas
+// Selection is material change + relevance, at most 3 cards, no role quotas
 // and no minimum (BRF 01-04). A quiet day, a limited-coverage day, and a
 // failure produce three different editions. Publication is the single
 // edition-document write after every referenced version exists (OPS 01);
@@ -21,7 +21,7 @@ import { loadEnvConfig } from "@next/env";
 loadEnvConfig(process.cwd());
 
 const POOL_SIZE = 10;
-const MAX_STORIES = 5;
+const MAX_STORIES = 3;
 const MAX_REELS = 3;
 const DRY_RUN = process.env.DRY_RUN === "1" || process.env.DRY_RUN === "true";
 const SITE = "https://thelongview.org";
@@ -31,7 +31,7 @@ interface Eligible {
   clusterTitles: string[];
   significance: number;
   doc: import("../src/lib/story-generate").StoryDoc;
-  research: import("../src/lib/research").ResearchNotes;
+  verification: import("../src/lib/research").HistoryVerification;
   existing: Awaited<
     ReturnType<typeof import("../src/lib/story-store").findMatchingStory>
   >;
@@ -62,7 +62,9 @@ async function main() {
   const { publishReel } = await import("./lib/meta-publish");
   const { sendDailyDigest } = await import("../src/lib/digest");
   const { sendRunReport } = await import("../src/lib/resend");
-  const { PIPELINE_MODEL } = await import("../src/lib/research-prompt");
+  const { ANALYSIS_MODEL, CHECK_MODEL } = await import(
+    "../src/lib/research-prompt"
+  );
   const { FieldValue } = await import("firebase-admin/firestore");
   type CandidateDecision = import("../src/lib/story-types").CandidateDecision;
   type EditionStatus = import("../src/lib/story-types").EditionStatus;
@@ -135,7 +137,8 @@ async function main() {
     const seenStoryIds = new Set<string>();
 
     // Pass 1, cheap: resolve, retrieve evidence and triage every cluster
-    // with a single analysis call (no web research). This ranks the pool.
+    // with a single call on the check model (no history, no web). This
+    // ranks the pool.
     interface Triaged {
       rep: (typeof clusters)[number]["representative"];
       clusterTitles: string[];
@@ -226,9 +229,9 @@ async function main() {
       }
     }
 
-    // Pass 2, expensive: full generation (research, analysis, headline,
-    // critic) in triage rank order, stopping once the edition is full. A
-    // withheld story hands its slot to the next in rank.
+    // Pass 2, expensive: full generation (analysis, verification, revision,
+    // headline, critic) in triage rank order, stopping once the edition is
+    // full. A withheld story hands its slot to the next in rank.
     triaged.sort((a, b) => b.significance - a.significance);
     for (const t of triaged) {
       if (eligible.length >= MAX_STORIES) {
@@ -275,7 +278,7 @@ async function main() {
           clusterTitles: t.clusterTitles,
           significance: result.doc.significance,
           doc: result.doc,
-          research: result.research,
+          verification: result.verification,
           existing: t.match,
           changeReason: result.changeReason,
         });
@@ -355,7 +358,7 @@ async function main() {
       for (const e of selected) {
         const ref = await publishStoryVersion({
           doc: e.doc,
-          researchSources: e.research.sources,
+          researchSources: e.verification.sources,
           existing: e.existing
             ? { story: e.existing.story, latestVersion: e.existing.latestVersion }
             : null,
@@ -543,7 +546,7 @@ async function main() {
     ),
     errors,
     dryRun: DRY_RUN,
-    model: PIPELINE_MODEL,
+    model: `${ANALYSIS_MODEL} / ${CHECK_MODEL}`,
   });
   if (!DRY_RUN) {
     await db.collection("locks").doc(`edition-${editionId}`).delete();

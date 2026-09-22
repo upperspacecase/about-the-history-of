@@ -1,6 +1,6 @@
 // Pipeline harness: fetch live feeds, cluster, pick one cluster, retrieve
-// its evidence, and run the full research -> analysis -> headline -> critic
-// path. Prints the result. Writes nothing to Firestore, publishes nothing.
+// its evidence, and run the full analysis -> verification -> revision ->
+// headline -> critic path. Prints the result. Writes nothing to Firestore, publishes nothing.
 //
 //     npx tsx scripts/test-story.ts            # biggest cluster
 //     npx tsx scripts/test-story.ts gaza aid   # cluster matching these words
@@ -44,7 +44,7 @@ async function main() {
     `  publishers: ${result.evidence.independentPublisherCount} · origins: ${result.evidence.independentOriginCount}`
   );
 
-  console.log("\nGenerating (research + analysis + headline + critic)…");
+  console.log("\nGenerating (analysis + verification + headline + critic)…");
   const story = await generateStory({
     evidence: result.evidence,
     recentHeadlines: [],
@@ -59,8 +59,7 @@ async function main() {
       JSON.stringify(
         {
           status: story.status,
-          researchSources: story.research.sources.length,
-          researchDiscarded: story.research.discardedSources,
+          verification: story.verification.verdicts,
           doc: story.doc,
         },
         null,
