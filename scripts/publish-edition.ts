@@ -537,7 +537,10 @@ async function main() {
       attempted: sweep.feedsAttempted,
       succeeded: sweep.feedsSucceeded,
     },
-    decisions,
+    // Firestore rejects undefined values; storyId is absent for new stories.
+    decisions: decisions.map(({ storyId, ...d }) =>
+      storyId ? { ...d, storyId } : d
+    ),
     errors,
     dryRun: DRY_RUN,
     model: PIPELINE_MODEL,
