@@ -91,16 +91,25 @@ export function claimsToPrompt(claims: HistoricalClaims): string {
 function collectSearchUrls(
   content: Anthropic.ContentBlock[],
   into: Set<string>
-) {
+): { searches: number; results: number; errors: string[] } {
+  let searches = 0;
+  let results = 0;
+  const errors: string[] = [];
   for (const block of content) {
-    if (block.type === "web_search_tool_result" && Array.isArray(block.content)) {
+    if (block.type !== "web_search_tool_result") continue;
+    searches++;
+    if (Array.isArray(block.content)) {
       for (const result of block.content) {
         if (result.type === "web_search_result" && result.url) {
           into.add(result.url);
+          results++;
         }
       }
+    } else {
+      errors.push(block.content.error_code);
     }
   }
+  return { searches, results, errors };
 }
 
 function finalText(content: Anthropic.ContentBlock[]): string {
@@ -186,7 +195,12 @@ export async function verifyHistory(
       messages,
     });
 
-    collectSearchUrls(response.content, receivedUrls);
+    const tally = collectSearchUrls(response.content, receivedUrls);
+    console.log(
+      `Verify: ${tally.searches} search(es), ${tally.results} result(s)` +
+        (tally.errors.length > 0 ? `, errors: ${tally.errors.join(", ")}` : "") +
+        `, stop ${response.stop_reason}`
+    );
 
     if (response.stop_reason === "pause_turn") {
       messages.push({ role: "assistant", content: response.content });
