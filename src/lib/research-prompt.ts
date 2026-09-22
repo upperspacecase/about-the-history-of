@@ -25,6 +25,11 @@
 // claude-sonnet-5 replaced claude-opus-5 on 2026-09-14 to cut cost; it
 // supports the same web_search_20260209 tool and structured outputs.
 export const PIPELINE_MODEL = "claude-sonnet-5";
+// Sonnet 5 runs adaptive thinking at effort "high" unless told otherwise, and
+// thinking bills as output tokens. Low effort on every stage since
+// 2026-09-22: the stages are structured extraction over supplied evidence,
+// not open-ended reasoning.
+export const PIPELINE_EFFORT = "low" as const;
 
 export const ANALYSIS_PROMPT = `You are the analysis stage of The Long View, an automated daily briefing whose promise is: understand the news, get on with your day. The reader wants to know what changed, why it matters, and enough background to make sense of it, without following the news all day.
 

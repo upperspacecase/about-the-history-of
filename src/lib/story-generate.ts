@@ -14,6 +14,7 @@ import {
   ANALYSIS_PROMPT,
   buildHeadlinePrompt,
   CRITIC_PROMPT,
+  PIPELINE_EFFORT,
   PIPELINE_MODEL,
 } from "./research-prompt";
 import {
@@ -206,7 +207,10 @@ async function runAnalysis(
     max_tokens: 16000,
     system: ANALYSIS_PROMPT,
     messages: [{ role: "user", content: parts.join("\n") }],
-    output_config: { format: zodOutputFormat(AnalysisSchema) },
+    output_config: {
+      format: zodOutputFormat(AnalysisSchema),
+      effort: PIPELINE_EFFORT,
+    },
   });
   if (!response.parsed_output) {
     throw new Error("Analysis call returned no parseable output");
@@ -302,7 +306,10 @@ async function generateValidatedHeadline(options: {
       max_tokens: 16000,
       system,
       messages: [{ role: "user", content: user }],
-      output_config: { format: zodOutputFormat(HeadlineCandidatesSchema) },
+      output_config: {
+        format: zodOutputFormat(HeadlineCandidatesSchema),
+        effort: PIPELINE_EFFORT,
+      },
     });
 
     const candidates = (response.parsed_output?.candidates ?? [])
@@ -374,7 +381,10 @@ async function runCritic(
     max_tokens: 16000,
     system: CRITIC_PROMPT,
     messages: [{ role: "user", content: user }],
-    output_config: { format: zodOutputFormat(CriticSchema) },
+    output_config: {
+      format: zodOutputFormat(CriticSchema),
+      effort: PIPELINE_EFFORT,
+    },
   });
   if (!response.parsed_output) {
     return {

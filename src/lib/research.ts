@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { evidenceToPrompt, type EvidencePackage } from "./evidence";
-import { PIPELINE_MODEL } from "./research-prompt";
+import { PIPELINE_EFFORT, PIPELINE_MODEL } from "./research-prompt";
 
 /**
  * Grounded historical research (EVD 06). Before analysis, an opus call with
@@ -12,9 +12,9 @@ import { PIPELINE_MODEL } from "./research-prompt";
 
 const MODEL = PIPELINE_MODEL;
 // Every search iteration re-bills the whole context so far, so this cap is
-// the main cost lever of the pipeline. 4 replaced 8 on 2026-09-22.
-const MAX_SEARCHES = 4;
-const MAX_PAUSE_RESUMES = 6;
+// the main cost lever of the pipeline. 3 replaced 8 on 2026-09-22.
+const MAX_SEARCHES = 3;
+const MAX_PAUSE_RESUMES = 2;
 
 const client = new Anthropic();
 
@@ -112,6 +112,7 @@ export async function researchBackground(
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: 16000,
+      output_config: { effort: PIPELINE_EFFORT },
       system: RESEARCH_PROMPT,
       tools: [
         {
