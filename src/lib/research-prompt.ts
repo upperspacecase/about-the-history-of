@@ -11,8 +11,9 @@
 //   2. ANALYSIS_PROMPT      the strong model analyses the evidence package
 //                           and proposes the history from its own knowledge;
 //                           recalled facts are candidates for verification.
-//   3. research.ts          web search checks the proposed dates, events and
-//                           the central comparison; verdict per claim.
+//   3. research.ts          web search checks the proposed timeline dates
+//                           and events and the central comparison, within a
+//                           fixed search budget; verdict per claim.
 //   4. REVISE_PROMPT        only when something was contradicted: correct or
 //                           remove each claim individually; replace or drop
 //                           a failed comparison.

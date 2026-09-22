@@ -289,7 +289,7 @@ async function reviseAnalysis(
     "YOUR ANALYSIS:",
     JSON.stringify(analysis, null, 2),
     "",
-    "VERIFICATION FINDINGS (P = precedent, T1.. = timeline entries in order, N1.. = patterns in order):",
+    "VERIFICATION FINDINGS (P = precedent, T1.. = timeline entries in order):",
     verification.summary,
   ].join("\n");
 
@@ -377,7 +377,7 @@ async function runCritic(
     "EVIDENCE PACKAGE:",
     evidenceText,
     "",
-    "HISTORICAL VERIFICATION FINDINGS (P = precedent, T1.. = timeline entries in order, N1.. = patterns in order; already applied to the story):",
+    "HISTORICAL VERIFICATION FINDINGS (P = precedent, T1.. = timeline entries in order; already applied to the story):",
     verificationSummary || "(no historical claims were checked)",
     "",
     "COMPLETE STORY (as it would publish):",
@@ -520,7 +520,6 @@ export async function generateStory(
     if (!verification || attempt > 0) {
       verification = await verifyHistory({
         timeline: rawAnalysis.timeline,
-        patterns: rawAnalysis.patterns,
         precedent: rawAnalysis.precedent,
       });
     }

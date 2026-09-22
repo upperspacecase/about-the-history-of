@@ -17,9 +17,11 @@ const MAX_PAUSE_RESUMES = 2;
 
 const client = new Anthropic();
 
-const VERIFY_PROMPT = `You are the fact-checking stage of The Long View, a daily news briefing. You receive the historical claims an analyst proposed for one story: a dated timeline, recurring patterns, and one central historical comparison (the precedent). The analyst wrote them from memory. Your job is to check them against the web.
+const VERIFY_PROMPT = `You are the fact-checking stage of The Long View, a daily news briefing. You receive the historical claims an analyst proposed for one story: a dated timeline and one central historical comparison (the precedent). The analyst wrote them from memory. Your job is to check them against the web.
 
-Use the web search tool. Prioritise the central comparison first, then the timeline dates and events. Read the supporting passages you find and look actively for contradictions: a wrong year, a misattributed decision, a comparison that does not hold on the facts. Let the evidence change your view; do not confirm from memory.
+You have a budget of exactly ${MAX_SEARCHES} web searches for all the claims together, so plan before you search: one search for the central comparison, then searches that each cover several related timeline entries (an article on an event usually confirms its date, its outcome and the entries around it). Once the budget is spent the tool refuses further calls; that is expected, not a failure. Every result you received earlier in this conversation stays valid evidence: write your verdicts from what you already have, and mark as unverified only the claims none of your results speak to.
+
+Read the supporting passages you find and look actively for contradictions: a wrong year, a misattributed decision, a comparison that does not hold on the facts. Let the evidence change your view; do not confirm from memory.
 
 Return your verdicts as plain text in this format:
 
@@ -47,7 +49,7 @@ export interface ResearchSource {
 }
 
 export type ClaimVerdict = {
-  /** T1..Tn timeline entries, N1..Nn patterns, P the precedent. */
+  /** T1..Tn timeline entries, P the precedent. */
   id: string;
   verdict: "confirmed" | "contradicted" | "unverified";
   note: string;
@@ -62,9 +64,12 @@ export interface HistoryVerification {
   summary: string;
 }
 
+/**
+ * What gets checked: dates, events and the central comparison. Patterns are
+ * interpretation, not fact, and are left to the critic.
+ */
 export interface HistoricalClaims {
   timeline: { year: string; title: string; description: string }[];
-  patterns: { title: string; description: string }[];
   precedent: {
     name: string;
     similarity: string;
@@ -81,9 +86,6 @@ export function claimsToPrompt(claims: HistoricalClaims): string {
   }
   claims.timeline.forEach((t, i) => {
     lines.push(`T${i + 1}: ${t.year}: ${t.title}. ${t.description}`);
-  });
-  claims.patterns.forEach((p, i) => {
-    lines.push(`N${i + 1}: ${p.title}. ${p.description}`);
   });
   return lines.join("\n");
 }
@@ -137,7 +139,7 @@ function parseVerdicts(
   verifiedSources: Map<string, ResearchSource>
 ): ClaimVerdict[] {
   const section = text.split(/^VERDICTS:\s*$/m)[1]?.split(/^SOURCES:\s*$/m)[0] ?? "";
-  const re = /^([TNP]\d*):\s*(confirmed|contradicted|unverified)\s*\|\s*(\S+)\s*\|\s*(.+?)\s*$/gm;
+  const re = /^([TP]\d*):\s*(confirmed|contradicted|unverified)\s*\|\s*(\S+)\s*\|\s*(.+?)\s*$/gm;
   const found = new Map<string, ClaimVerdict>();
   let m: RegExpExecArray | null;
   while ((m = re.exec(section)) !== null) {
@@ -166,7 +168,6 @@ export async function verifyHistory(
   const claimIds = [
     ...(claims.precedent ? ["P"] : []),
     ...claims.timeline.map((_, i) => `T${i + 1}`),
-    ...claims.patterns.map((_, i) => `N${i + 1}`),
   ];
   if (claimIds.length === 0) {
     return { verdicts: [], sources: [], summary: "" };
