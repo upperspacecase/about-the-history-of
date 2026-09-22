@@ -1,7 +1,9 @@
 // The daily edition pipeline (PRD v2 §13). Stages, in order and isolated:
 //
 //   ingest -> cluster -> story resolution -> evidence retrieval ->
-//   generation (research/analysis/headline/critic) -> selection ->
+//   triage (one analysis call, ranks the pool) ->
+//   generation (research/analysis/headline/critic, rank order, stops at
+//   the cut) -> selection ->
 //   atomic publication -> email -> reels -> operator report
 //
 // Selection is material change + relevance, at most 5 cards, no role quotas
@@ -41,7 +43,9 @@ async function main() {
   const { fetchAllReports } = await import("../src/lib/feeds");
   const { clusterHeadlines } = await import("../src/lib/select-top-stories");
   const { buildEvidencePackage } = await import("../src/lib/evidence");
-  const { generateStory } = await import("../src/lib/story-generate");
+  const { generateStory, triageStory } = await import(
+    "../src/lib/story-generate"
+  );
   const { fetchRecentPublishedHeadlines } = await import(
     "../src/lib/recent-headlines"
   );
@@ -130,6 +134,21 @@ async function main() {
 
     const seenStoryIds = new Set<string>();
 
+    // Pass 1, cheap: resolve, retrieve evidence and triage every cluster
+    // with a single analysis call (no web research). This ranks the pool.
+    interface Triaged {
+      rep: (typeof clusters)[number]["representative"];
+      clusterTitles: string[];
+      match: Awaited<ReturnType<typeof findMatchingStory>>;
+      evidence: Extract<
+        Awaited<ReturnType<typeof buildEvidencePackage>>,
+        { ok: true }
+      >["evidence"];
+      previousAccount: import("../src/lib/story-generate").StoryGenerationInput["previousAccount"];
+      significance: number;
+    }
+    const triaged: Triaged[] = [];
+
     for (const cluster of clusters) {
       const rep = cluster.representative;
       const clusterTitles = cluster.members.map((m) => m.title);
@@ -159,56 +178,41 @@ async function main() {
         }
 
         const prev = match?.latestVersion.doc;
-        const result = await generateStory({
-          evidence: evidence.evidence,
-          recentHeadlines,
-          // The briefing shows the uncertainty on every card, so
-          // low-confidence stories publish with it rather than vanish.
-          allowLowConfidence: true,
-          previousAccount: prev
-            ? {
-                editorialHeadline: prev.truthHeadline,
-                whatChanged: prev.whatChanged ?? prev.summary ?? "",
-                background: prev.background ?? "",
-                publishedAt: match!.latestVersion.publishedAt,
-              }
-            : null,
-        });
+        const previousAccount = prev
+          ? {
+              editorialHeadline: prev.truthHeadline,
+              whatChanged: prev.whatChanged ?? prev.summary ?? "",
+              background: prev.background ?? "",
+              publishedAt: match!.latestVersion.publishedAt,
+            }
+          : null;
 
-        if (result.status === "no-material-change") {
+        const triage = await triageStory({
+          evidence: evidence.evidence,
+          previousAccount,
+        });
+        if (triage.status === "no-material-change") {
           decisions.push({
             clusterTitle: rep.title,
             storyId: match?.story.id,
             outcome: "no-material-change",
-            reason: result.reason,
+            reason: triage.reason,
           });
           if (match) seenStoryIds.add(match.story.id);
           continue;
         }
-        if (result.status === "withheld") {
-          evidenceInsufficient++;
-          decisions.push({
-            clusterTitle: rep.title,
-            storyId: match?.story.id,
-            outcome: "evidence-insufficient",
-            reason: result.reasons.join("; ").slice(0, 500),
-          });
-          continue;
-        }
 
         if (match) seenStoryIds.add(match.story.id);
-        eligible.push({
-          clusterTitle: rep.title,
+        triaged.push({
+          rep,
           clusterTitles,
-          significance: result.doc.significance,
-          doc: result.doc,
-          research: result.research,
-          existing: match,
-          changeReason: result.changeReason,
+          match,
+          evidence: evidence.evidence,
+          previousAccount,
+          significance: triage.significance,
         });
-        recentHeadlines.unshift(result.doc.truthHeadline);
         console.log(
-          `Eligible: "${result.doc.truthHeadline}" (internal ${result.doc.significance}/10)`
+          `Triaged: "${rep.title}" (internal ${triage.significance}/10)`
         );
       } catch (err) {
         processingFailures++;
@@ -221,10 +225,79 @@ async function main() {
         });
       }
     }
+
+    // Pass 2, expensive: full generation (research, analysis, headline,
+    // critic) in triage rank order, stopping once the edition is full. A
+    // withheld story hands its slot to the next in rank.
+    triaged.sort((a, b) => b.significance - a.significance);
+    for (const t of triaged) {
+      if (eligible.length >= MAX_STORIES) {
+        decisions.push({
+          clusterTitle: t.rep.title,
+          storyId: t.match?.story.id,
+          outcome: "outside-scope",
+          reason: "ranked below the edition cut",
+        });
+        continue;
+      }
+      try {
+        const result = await generateStory({
+          evidence: t.evidence,
+          recentHeadlines,
+          // The briefing shows the uncertainty on every card, so
+          // low-confidence stories publish with it rather than vanish.
+          allowLowConfidence: true,
+          previousAccount: t.previousAccount,
+        });
+
+        if (result.status === "no-material-change") {
+          decisions.push({
+            clusterTitle: t.rep.title,
+            storyId: t.match?.story.id,
+            outcome: "no-material-change",
+            reason: result.reason,
+          });
+          continue;
+        }
+        if (result.status === "withheld") {
+          evidenceInsufficient++;
+          decisions.push({
+            clusterTitle: t.rep.title,
+            storyId: t.match?.story.id,
+            outcome: "evidence-insufficient",
+            reason: result.reasons.join("; ").slice(0, 500),
+          });
+          continue;
+        }
+
+        eligible.push({
+          clusterTitle: t.rep.title,
+          clusterTitles: t.clusterTitles,
+          significance: result.doc.significance,
+          doc: result.doc,
+          research: result.research,
+          existing: t.match,
+          changeReason: result.changeReason,
+        });
+        recentHeadlines.unshift(result.doc.truthHeadline);
+        console.log(
+          `Eligible: "${result.doc.truthHeadline}" (internal ${result.doc.significance}/10)`
+        );
+      } catch (err) {
+        processingFailures++;
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`"${t.rep.title}": ${msg}`);
+        decisions.push({
+          clusterTitle: t.rep.title,
+          outcome: "processing-failed",
+          reason: msg.slice(0, 300),
+        });
+      }
+    }
     stages.generate = processingFailures === coverage.candidatesConsidered && coverage.candidatesConsidered > 0 ? "failed" : "ok";
   }
 
-  // ---- Selection: review the whole pool, rank, cut (§6). ----
+  // ---- Selection: rank the generated pool, cut (§6). ----
   const ranked = [...eligible].sort((a, b) => b.significance - a.significance);
   const selected = ranked.slice(0, MAX_STORIES);
   for (const e of ranked.slice(MAX_STORIES)) {

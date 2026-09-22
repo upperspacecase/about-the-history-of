@@ -445,6 +445,43 @@ function assembleDoc(
   };
 }
 
+export type TriageResult =
+  | { status: "candidate"; significance: number }
+  | { status: "no-material-change"; reason: string };
+
+/**
+ * Cheap first pass: one analysis call on the evidence package alone, no web
+ * research. Gives the significance score and the material-change decision so
+ * the edition can rank the pool and pay for full generation only on the
+ * clusters that can still make the cut.
+ */
+export async function triageStory(
+  input: Pick<StoryGenerationInput, "evidence" | "previousAccount">
+): Promise<TriageResult> {
+  const previousAccountText = input.previousAccount
+    ? [
+        "OUR PREVIOUS PUBLISHED ACCOUNT (write whatChanged as the difference from this; reuse still-accurate background):",
+        JSON.stringify(input.previousAccount, null, 2),
+      ].join("\n")
+    : "";
+  const analysis = await runAnalysis(
+    evidenceToPrompt(input.evidence),
+    "",
+    previousAccountText,
+    []
+  );
+  if (input.previousAccount && !analysis.materialChange) {
+    return {
+      status: "no-material-change",
+      reason: analysis.changeReason || "no material development",
+    };
+  }
+  return {
+    status: "candidate",
+    significance: normalizeBreakdown(analysis.scoreBreakdown).total,
+  };
+}
+
 export async function generateStory(
   input: StoryGenerationInput
 ): Promise<StoryResult> {

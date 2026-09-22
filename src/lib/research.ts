@@ -11,7 +11,9 @@ import { PIPELINE_MODEL } from "./research-prompt";
  */
 
 const MODEL = PIPELINE_MODEL;
-const MAX_SEARCHES = 8;
+// Every search iteration re-bills the whole context so far, so this cap is
+// the main cost lever of the pipeline. 4 replaced 8 on 2026-09-22.
+const MAX_SEARCHES = 4;
 const MAX_PAUSE_RESUMES = 6;
 
 const client = new Anthropic();
