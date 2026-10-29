@@ -10,10 +10,12 @@
     "remotion:studio": "remotion studio",
     "remotion:render": "remotion render Demo public/demo.mp4",
     "reel:render": "remotion render Reel out/reel.mp4",
-    "publish-edition": "tsx scripts/publish-edition.ts"
+    "publish-edition": "tsx scripts/publish-edition.ts",
+    "validate-jev": "tsx scripts/validate-jev-triage.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
+    "@typesafe-ai/sdk": "^0.7.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.4.0",
     "firebase": "^12.12.1",

@@ -15,16 +15,43 @@
 //
 // DRY_RUN=1: full generation and local reel renders, but no writes to
 // stories/editions, no email, no Instagram, no delivery ledger (OPS 04).
+//
+// Cheap-mode flags default off, so an unset environment matches the path
+// above. MAX_STORIES (1-3, default 3) caps the edition. SITE_ONLY=1 (or
+// CHANNELS=site) skips reels and the subscriber digest. SKIP_REELS and
+// SKIP_SUBSCRIBER_EMAIL do either channel alone. TRIAGE_PROVIDER=jev ranks
+// with Jev and falls back to Claude triage on any error; default is claude.
 import { mkdir } from "node:fs/promises";
 import { loadEnvConfig } from "@next/env";
+import {
+  jevNoulThreshold,
+  maxStories,
+  siteOnly,
+  skipReels,
+  skipSubscriberEmail,
+  triageProvider,
+} from "../src/lib/edition-flags";
+import {
+  formatJevReason,
+  jevGatePassed,
+  jevSignificance,
+  type JevTriageDecision,
+} from "../src/lib/jev-rank";
 
 loadEnvConfig(process.cwd());
 
 const POOL_SIZE = 10;
-const MAX_STORIES = 3;
 const MAX_REELS = 3;
 const DRY_RUN = process.env.DRY_RUN === "1" || process.env.DRY_RUN === "true";
 const SITE = "https://thelongview.org";
+
+function safeErr(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg
+    .replace(/-----BEGIN[\s\S]*?-----END[^\n]*-----/g, "[redacted]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [redacted]")
+    .slice(0, 240);
+}
 
 interface Eligible {
   clusterTitle: string;
@@ -78,6 +105,28 @@ async function main() {
   const stages: Record<string, "ok" | "failed" | "skipped"> = {};
   const decisions: CandidateDecision[] = [];
   const errors: string[] = [];
+  const storyCap = maxStories();
+  const provider = triageProvider();
+  const noulThreshold = jevNoulThreshold();
+  const skipReelChannel = skipReels();
+  const skipDigest = skipSubscriberEmail();
+  let jevFallbacks = 0;
+  const jevNotes: Array<{
+    clusterTitle: string;
+    worthNoul: number;
+    importanceScore: number;
+    theme: string;
+    passed: boolean;
+  }> = [];
+  const rawMax = process.env.MAX_STORIES?.trim();
+  if (rawMax && String(storyCap) !== String(Number(rawMax))) {
+    console.warn(
+      `MAX_STORIES=${rawMax} is not an integer from 1 to 3; keeping ${storyCap}.`
+    );
+  }
+  console.log(
+    `Flags: maxStories=${storyCap} siteOnly=${siteOnly()} skipReels=${skipReelChannel} skipSubscriberEmail=${skipDigest} triage=${provider} dryRun=${DRY_RUN}`
+  );
 
   // OPS 02: idempotency + a lock against concurrent publication races.
   const existingEdition = await getEdition(editionId);
@@ -136,9 +185,25 @@ async function main() {
 
     const seenStoryIds = new Set<string>();
 
-    // Pass 1, cheap: resolve, retrieve evidence and triage every cluster
-    // with a single call on the check model (no history, no web). This
-    // ranks the pool.
+    // Pass 1 ranks the pool before any full write-up. The default is one
+    // Claude check-model call per cluster (no history, no web). Jev, when
+    // selected, replaces that call and falls back to it on error.
+    let jevMod: typeof import("../src/lib/jev-triage") | null = null;
+    if (provider === "jev") {
+      if (!process.env.TYPESAFE_API_KEY?.trim()) {
+        console.warn(
+          "TRIAGE_PROVIDER=jev but TYPESAFE_API_KEY is unset; using Claude triage."
+        );
+      } else {
+        try {
+          jevMod = await import("../src/lib/jev-triage");
+        } catch (err) {
+          console.warn(
+            `Jev triage could not be loaded; using Claude. ${safeErr(err)}`
+          );
+        }
+      }
+    }
     interface Triaged {
       rep: (typeof clusters)[number]["representative"];
       clusterTitles: string[];
@@ -190,10 +255,56 @@ async function main() {
             }
           : null;
 
-        const triage = await triageStory({
-          evidence: evidence.evidence,
-          previousAccount,
-        });
+        let triage: Awaited<ReturnType<typeof triageStory>>;
+        if (jevMod) {
+          try {
+            const decision: JevTriageDecision = await jevMod.triageClusterWithJev(
+              jevMod.clusterInputFromEvidence(evidence.evidence, previousAccount)
+            );
+            const passed = jevGatePassed(decision, noulThreshold);
+            jevNotes.push({
+              clusterTitle: rep.title,
+              worthNoul: decision.worthNoul,
+              importanceScore: decision.importanceScore,
+              theme: decision.theme,
+              passed,
+            });
+            console.log(
+              `Jev: "${rep.title}" noul ${decision.worthNoul.toFixed(3)} importance ${decision.importanceScore.toFixed(2)} theme ${decision.theme} model ${decision.model}`
+            );
+            if (!passed) {
+              decisions.push({
+                clusterTitle: rep.title,
+                storyId: match?.story.id,
+                outcome: "outside-scope",
+                reason: formatJevReason(decision, noulThreshold, false).slice(
+                  0,
+                  300
+                ),
+              });
+              if (match) seenStoryIds.add(match.story.id);
+              continue;
+            }
+            triage = {
+              status: "candidate",
+              significance: jevSignificance(decision),
+            };
+          } catch (err) {
+            jevFallbacks += 1;
+            console.warn(
+              `Jev triage failed for "${rep.title}"; Claude fallback. ${safeErr(err)}`
+            );
+            triage = await triageStory({
+              evidence: evidence.evidence,
+              previousAccount,
+            });
+          }
+        } else {
+          triage = await triageStory({
+            evidence: evidence.evidence,
+            previousAccount,
+          });
+        }
         if (triage.status === "no-material-change") {
           decisions.push({
             clusterTitle: rep.title,
@@ -234,7 +345,7 @@ async function main() {
     // full. A withheld story hands its slot to the next in rank.
     triaged.sort((a, b) => b.significance - a.significance);
     for (const t of triaged) {
-      if (eligible.length >= MAX_STORIES) {
+      if (eligible.length >= storyCap) {
         decisions.push({
           clusterTitle: t.rep.title,
           storyId: t.match?.story.id,
@@ -302,8 +413,8 @@ async function main() {
 
   // ---- Selection: rank the generated pool, cut (§6). ----
   const ranked = [...eligible].sort((a, b) => b.significance - a.significance);
-  const selected = ranked.slice(0, MAX_STORIES);
-  for (const e of ranked.slice(MAX_STORIES)) {
+  const selected = ranked.slice(0, storyCap);
+  for (const e of ranked.slice(storyCap)) {
     decisions.push({
       clusterTitle: e.clusterTitle,
       outcome: "outside-scope",
@@ -391,8 +502,13 @@ async function main() {
 
   // ---- Email (independent channel; never sent for a failed run) ----
   let digestSummary = "skipped";
-  if (DRY_RUN || !editionPublished) {
+  if (DRY_RUN || !editionPublished || skipDigest) {
     stages.email = "skipped";
+    if (!DRY_RUN && editionPublished && status === "unavailable") {
+      digestSummary = "skipped (unavailable edition)";
+    } else if (skipDigest && !DRY_RUN && editionPublished) {
+      digestSummary = "skipped (subscriber email off)";
+    }
   } else if (status === "unavailable") {
     // Do not send a quiet-day email for a processing failure (§10).
     stages.email = "skipped";
@@ -428,15 +544,20 @@ async function main() {
   // ---- Reels (independent channel; no quota posting) ----
   let posted = 0;
   const reelFailures: string[] = [];
-  const reelTargets = DRY_RUN
-    ? selected.slice(0, MAX_REELS).map((e) => ({
-        slug: "dry-run",
-        versionId: `dry-${headlineKey(e.doc.headline)}`,
-        doc: e.doc,
-      }))
-    : published.slice(0, MAX_REELS);
+  const reelTargets = skipReelChannel
+    ? []
+    : DRY_RUN
+      ? selected.slice(0, MAX_REELS).map((e) => ({
+          slug: "dry-run",
+          versionId: `dry-${headlineKey(e.doc.headline)}`,
+          doc: e.doc,
+        }))
+      : published.slice(0, MAX_REELS);
 
-  if (reelTargets.length === 0) {
+  if (skipReelChannel) {
+    stages.reels = "skipped";
+    console.log("Reels skipped (SITE_ONLY or SKIP_REELS).");
+  } else if (reelTargets.length === 0) {
     stages.reels = "skipped";
   } else {
     for (const target of reelTargets) {
@@ -520,7 +641,7 @@ async function main() {
     errors.push(...reelFailures);
   }
 
-  if (!DRY_RUN) {
+  if (!DRY_RUN && !skipReelChannel) {
     try {
       const cleaned = await cleanupOldBlobs();
       if (cleaned > 0) console.log(`Cleaned up ${cleaned} old Reel blob(s).`);
@@ -547,6 +668,15 @@ async function main() {
     errors,
     dryRun: DRY_RUN,
     model: `${ANALYSIS_MODEL} / ${CHECK_MODEL}`,
+    flags: {
+      maxStories: storyCap,
+      siteOnly: siteOnly(),
+      skipReels: skipReelChannel,
+      skipSubscriberEmail: skipDigest,
+      triageProvider: provider,
+    },
+    jevFallbacks,
+    ...(jevNotes.length > 0 ? { jevNotes } : {}),
   });
   if (!DRY_RUN) {
     await db.collection("locks").doc(`edition-${editionId}`).delete();
@@ -558,6 +688,7 @@ async function main() {
     `Edition ${editionId}: ${DRY_RUN ? "DRY RUN, " : ""}${editionPublished || DRY_RUN ? status : "PUBLICATION FAILED"}`,
     `Stories: ${selected.length} selected of ${coverage.candidatesConsidered} clusters (${eligible.length} eligible)`,
     `Feeds: ${sweep.feedsSucceeded}/${sweep.feedsAttempted}`,
+    `Flags: stories<=${storyCap} siteOnly=${siteOnly()} reels=${skipReelChannel ? "off" : "on"} subscriberEmail=${skipDigest ? "off" : "on"} triage=${provider}${jevFallbacks > 0 ? ` jevFallbacks=${jevFallbacks}` : ""}`,
     `Email: ${digestSummary}`,
     `Reels: ${posted}/${reelTargets.length}`,
     "",

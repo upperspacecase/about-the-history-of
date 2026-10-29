@@ -50,6 +50,17 @@ const SOURCES = [
   "TechCrunch",
 ];
 
+/**
+ * Amount shown on the paywall. Checkout charges whichever Stripe Price id
+ * getPriceId() resolves (STRIPE_PRICE_ANNUAL, then STRIPE_PRICE_YEARLY).
+ * That id is server-only, so this client component cannot read it. Set
+ * NEXT_PUBLIC_ANNUAL_PRICE_LABEL to override the visible amount.
+ */
+function annualPriceAmount(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_ANNUAL_PRICE_LABEL?.trim();
+  return fromEnv || "$99";
+}
+
 function Check() {
   return (
     <svg
@@ -260,11 +271,10 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
                 The Daily Long View
               </h3>
               <div className="mt-4 flex items-baseline gap-2">
-                {/* Shows the price Stripe actually charges (the current
-                    yearly price). When the $99 price goes live in Stripe and
-                    STRIPE_PRICE_ANNUAL is set, update this to $99. */}
-                <span className="text-4xl font-bold tracking-tight">£200</span>
-                <span className="text-sm text-muted">/year</span>
+                <span className="text-4xl font-bold tracking-tight">
+                  {annualPriceAmount()}
+                </span>
+                <span className="text-sm text-muted">/yr</span>
               </div>
               <p className="mt-1 text-xs text-muted">
                 14-day free trial. Cancel anytime.
@@ -277,7 +287,7 @@ export function PaymentPopup({ dateLabel }: PaymentPopupProps) {
               >
                 {checkoutLoading
                   ? "Opening Stripe…"
-                  : "Start your 14-day trial · £200/year"}
+                  : `Start your 14-day trial · ${annualPriceAmount()}/yr`}
               </button>
               <ul className="mt-5 space-y-2.5 text-sm border-t border-border pt-5">
                 {PLAN_FEATURES.map((f) => (
